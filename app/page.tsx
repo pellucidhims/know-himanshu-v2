@@ -8,6 +8,7 @@ import Projects from './components/sections/projects'
 import Blog from './components/sections/blog'
 import Referral from './components/sections/referral'
 import Contact from './components/sections/contact'
+import FriendsCharacter from './components/ui/friends-character'
 
 export default function Home() {
   return (
@@ -23,6 +24,14 @@ export default function Home() {
       <Blog />
       <Referral />
       <Contact />
+      
+      {/* Friends Characters - Scattered across sections */}
+      <FriendsCharacter sectionId="skills" character="Ross" position="right" offset={-50} />
+      <FriendsCharacter sectionId="education" character="Rachel" position="left" offset={0} />
+      <FriendsCharacter sectionId="project" character="Chandler" position="right" offset={30} />
+      <FriendsCharacter sectionId="experience" character="Monica" position="left" offset={-30} />
+      <FriendsCharacter sectionId="contact" character="Joey" position="right" offset={20} />
+      <FriendsCharacter sectionId="referral" character="Phoebe" position="right" offset={20} />
       
       {/* Footer */}
       <footer className="bg-gray-900 dark:bg-dark-bg text-white py-8">
