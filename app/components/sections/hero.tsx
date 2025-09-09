@@ -76,7 +76,7 @@ export default function Hero() {
   }
 
   return (
-    <section id="home" className="min-h-screen flex items-center justify-center bg-gradient-dark relative overflow-hidden">
+    <section id="home" className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-gradient-dark relative overflow-hidden">
       {/* Background particles/effects */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl"></div>
@@ -99,21 +99,32 @@ export default function Hero() {
               <h1 className="text-5xl md:text-7xl font-bold mb-4">
                 <span className="text-secondary-500">Hey,</span>
                 <br />
-                <span 
-                  className="transition-colors duration-500"
-                  style={{ color: COLOR_ARRAY[colorIndex] }}
-                >
-                  {currentText}
-                  <span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
-                    |
-                  </span>
-                </span>
+                <div className="relative min-h-[7rem] md:min-h-[10rem]">
+                  {/* Invisible longest text to reserve space - allows wrapping */}
+                  <div 
+                    className="invisible text-5xl md:text-7xl font-bold leading-tight"
+                    aria-hidden="true"
+                  >
+                    {INTRO_TEXTS.reduce((a, b) => a.length > b.length ? a : b)}|
+                  </div>
+                  
+                  {/* Visible typewriter text - positioned absolutely */}
+                  <div 
+                    className="absolute top-0 left-0 w-full transition-colors duration-500 text-5xl md:text-7xl font-bold leading-tight"
+                    style={{ color: COLOR_ARRAY[colorIndex] }}
+                  >
+                    {currentText}
+                    <span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
+                      |
+                    </span>
+                  </div>
+                </div>
               </h1>
             </motion.div>
 
             <motion.p
               variants={textVariant(0.8)}
-              className="text-xl md:text-2xl text-dark-text-secondary mb-8 leading-relaxed"
+              className="text-xl md:text-2xl text-gray-600 dark:text-dark-text-secondary mb-8 leading-relaxed"
             >
               Senior Software Engineer at Walmart Global Tech
             </motion.p>
@@ -158,7 +169,7 @@ export default function Hero() {
                 transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                 className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 p-2"
               >
-                <div className="w-full h-full rounded-full bg-dark-surface"></div>
+                <div className="w-full h-full rounded-full bg-white dark:bg-dark-surface"></div>
               </motion.div>
               
               {/* Profile Image */}
@@ -199,8 +210,8 @@ export default function Hero() {
         transition={{ duration: 2, repeat: Infinity }}
         className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
       >
-        <div className="w-6 h-10 border-2 border-dark-text-secondary rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-dark-text-secondary rounded-full mt-2"></div>
+        <div className="w-6 h-10 border-2 border-gray-400 dark:border-dark-text-secondary rounded-full flex justify-center">
+          <div className="w-1 h-3 bg-gray-400 dark:bg-dark-text-secondary rounded-full mt-2"></div>
         </div>
       </motion.div>
     </section>
