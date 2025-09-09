@@ -28,9 +28,9 @@ export default function Home() {
       {/* Friends Characters - Scattered across sections */}
       <FriendsCharacter sectionId="skills" character="Ross" position="right" offset={-50} />
       <FriendsCharacter sectionId="education" character="Rachel" position="left" offset={0} />
-      <FriendsCharacter sectionId="project" character="Chandler" position="right" offset={30} />
-      <FriendsCharacter sectionId="experience" character="Monica" position="left" offset={-30} />
-      <FriendsCharacter sectionId="contact" character="Joey" position="right" offset={20} />
+      <FriendsCharacter sectionId="project" character="Chandler" position="left" offset={30} />
+      <FriendsCharacter sectionId="experience" character="Monica" position="right" offset={-30} />
+      <FriendsCharacter sectionId="contact" character="Joey" position="left" offset={20} />
       <FriendsCharacter sectionId="referral" character="Phoebe" position="right" offset={20} />
       
       {/* Footer */}

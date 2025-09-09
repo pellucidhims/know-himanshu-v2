@@ -17,7 +17,7 @@ const FRIENDS_CHARACTERS = [
   { name: 'Monica', image: '/friends-characters/monica_geller.png', quotes: ['I KNOW!', 'Welcome to the real world!', 'Not just health-department clean, "Monica" clean.'] },
   { name: 'Chandler', image: '/friends-characters/chandler_bing.png', quotes: ['Hi, I\'m Chandler. I make jokes when I\'m uncomfortable.', 'Could this BE any more obvious?', 'I\'m not great at the advice'] },
   { name: 'Joey', image: '/friends-characters/joey_tribbiani.png', quotes: ['How you doin\'?', 'Joey doesn\'t share food!', 'It\'s a moo point'] },
-  { name: 'Phoebe', image: '/friends-characters/phoebe_buffay.png', quotes: ['Smelly cat!', 'My Eyes! MY EYES!', 'This is brand new information!'] }
+  { name: 'Phoebe', image: '/friends-characters/phoebe_buffay.png', quotes: ['My Eyes! MY EYES!', 'This is brand new information!','Smelly cat!'] }
 ]
 
 // Fallback character icons using emojis for when images aren't available
