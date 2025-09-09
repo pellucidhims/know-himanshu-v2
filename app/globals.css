@@ -2,26 +2,249 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 255, 255, 255;
+    --background-end-rgb: 248, 250, 252;
+  }
+
+  .dark {
+    --foreground-rgb: 247, 250, 252;
+    --background-start-rgb: 15, 15, 35;
+    --background-end-rgb: 26, 26, 46;
+  }
+
+  * {
+    border-color: theme('colors.border');
+  }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden; /* Prevent horizontal scroll only */
+  }
+
+  body {
+    @apply bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-bg dark:to-dark-surface;
+    @apply text-gray-900 dark:text-dark-text-primary;
+    @apply transition-colors duration-300;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden; /* Prevent horizontal scroll only */
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100vh;
+  }
+
+  /* Custom scrollbar for desktop */
+  @media (min-width: 769px) {
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      @apply bg-gray-100 dark:bg-dark-surface;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      @apply bg-gray-400 dark:bg-dark-border rounded-full;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      @apply bg-gray-500 dark:bg-gray-600;
+    }
+  }
+
+  /* Hide scrollbar on mobile while keeping scroll functionality */
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    
+    /* For Firefox */
+    html {
+      scrollbar-width: none;
+    }
+    
+    /* Ensure scrolling still works */
+    body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      overflow-y: auto !important; /* Ensure vertical scrolling works */
+    }
+    
+    /* Ensure main content area is scrollable */
+    main {
+      overflow-y: visible !important;
+      height: auto !important;
+      min-height: 100vh;
+    }
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-primary-200 dark:bg-primary-800 text-primary-900 dark:text-primary-100;
+  }
+
+  /* Mobile optimization */
+  @media (max-width: 768px) {
+    * {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    body {
+      -webkit-text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Only apply overflow-x hidden to specific containers that need it */
+    .container {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+    
+    /* Allow sections to render normally */
+    section {
+      max-width: 100vw;
+      width: 100%;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: relative;
+    }
+    
+    /* Ensure motion divs are visible */
+    section [data-framer-motion] {
+      display: block !important;
+      visibility: visible !important;
+    }
+    
+    /* Fix for sections that might be getting hidden */
+    #experience, #project, #referral, #blog {
+      min-height: auto !important;
+      height: auto !important;
+      overflow: visible !important;
+    }
+    
+    /* Specific fixes for problematic sections */
+    #experience .space-y-16,
+    #project .space-y-16,
+    #referral .space-y-16 {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: block !important;
+    }
+    
+    /* Ensure motion containers work */
+    [data-framer-motion] {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+  }
+
+  /* Touch optimizations for mobile */
+  @media (hover: none) and (pointer: coarse) {
+    button, [role="button"], input[type="submit"], input[type="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Smooth scrolling for all devices */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent zoom on inputs on iOS */
+  @media screen and (max-width: 767px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    textarea {
+      font-size: 16px;
+    }
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+@layer components {
+  .pendulum {
+    @apply bg-black relative left-1/2;
+    transform-origin: bottom center;
+    animation: swing 2s infinite alternate;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Mobile-safe container */
+  .mobile-safe {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  /* Scrollbar hiding utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Ensure navbar stays within viewport on mobile */
+  @media (max-width: 768px) {
+    .mobile-navbar {
+      width: 100%;
+      max-width: 100vw;
+      left: 0;
+      right: 0;
+      position: fixed;
+      box-sizing: border-box;
+    }
+    
+    .mobile-navbar > div {
+      width: 100%;
+      max-width: 100%;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      box-sizing: border-box;
+    }
+  }
+}
+
+@keyframes swing {
+  0% {
+    transform: rotate(-15deg);
+  }
+  100% {
+    transform: rotate(15deg);
+  }
 }
