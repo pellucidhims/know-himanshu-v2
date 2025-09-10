@@ -1,8 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
+import { motion } from 'framer-motion'
+import { imageCache } from '../../lib/image-cache'
+
+// Custom hook to handle hydration safely
+function useIsomorphicLayoutEffect(effect: () => void, deps?: React.DependencyList) {
+  const isClient = typeof window !== 'undefined'
+  useEffect(isClient ? effect : () => {}, deps)
+}
 
 interface FriendsCharacterProps {
   sectionId: string
@@ -43,25 +49,82 @@ export default function FriendsCharacter({
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
   const [usedQuotes, setUsedQuotes] = useState<Set<number>>(new Set())
   const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
   const [lastQuoteTime, setLastQuoteTime] = useState(0)
+  const [hasInitialized, setHasInitialized] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const sectionRef = useRef<HTMLDivElement>(null)
   const quoteTimeoutRef = useRef<NodeJS.Timeout>()
+  const imgRef = useRef<HTMLImageElement>(null)
 
-  // Select random character if not specified
+  // Handle client-side mounting
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Select character after mounting to avoid hydration mismatch
+  useEffect(() => {
+    if (!isMounted) return
+    
     if (!character) {
-      const randomIndex = Math.floor(Math.random() * FRIENDS_CHARACTERS.length)
+      // Use deterministic selection based on sectionId to avoid hydration mismatch
+      const hash = sectionId.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0)
+        return a & a
+      }, 0)
+      const randomIndex = Math.abs(hash) % FRIENDS_CHARACTERS.length
       setSelectedCharacter(randomIndex)
     } else {
       const characterIndex = FRIENDS_CHARACTERS.findIndex(c => c.name.toLowerCase() === character.toLowerCase())
       setSelectedCharacter(characterIndex >= 0 ? characterIndex : 0)
     }
-  }, [character])
+  }, [character, sectionId, isMounted])
 
+  // Check image cache status when character changes
   useEffect(() => {
+    const currentImage = FRIENDS_CHARACTERS[selectedCharacter]?.image
+    if (currentImage) {
+      // console.log(`🎭 Character changed to: ${FRIENDS_CHARACTERS[selectedCharacter].name}`)
+      
+      // Check if image is already in cache
+      if (imageCache.isLoaded(currentImage)) {
+        // console.log(`⚡ Using cached image for ${FRIENDS_CHARACTERS[selectedCharacter].name}`)
+        setImageLoaded(true)
+        setImageError(false)
+      } else if (imageCache.hasError(currentImage)) {
+        // console.log(`❌ Using fallback for ${FRIENDS_CHARACTERS[selectedCharacter].name}`)
+        setImageLoaded(false)
+        setImageError(true)
+      } else {
+        // console.log(`⏳ Loading image for ${FRIENDS_CHARACTERS[selectedCharacter].name}`)
+        setImageLoaded(false)
+        setImageError(false)
+        // Preload if not in cache
+        imageCache.preloadImage(currentImage)
+          .then(() => {
+            // console.log(`✅ Image loaded for ${FRIENDS_CHARACTERS[selectedCharacter].name}`)
+            setImageLoaded(true)
+          })
+          .catch(() => {
+            // console.log(`❌ Image failed for ${FRIENDS_CHARACTERS[selectedCharacter].name}`)
+            setImageError(true)
+          })
+      }
+    }
+  }, [selectedCharacter])
+
+  useIsomorphicLayoutEffect(() => {
+    if (!isMounted) return
+
     const handleScroll = () => {
       const section = document.getElementById(sectionId)
       if (!section) return
+
+      // Mark as initialized after first scroll check
+      if (!hasInitialized) {
+        setHasInitialized(true)
+        return // Don't process scroll logic until next call
+      }
 
       const rect = section.getBoundingClientRect()
       const windowHeight = window.innerHeight
@@ -150,7 +213,7 @@ export default function FriendsCharacter({
         clearTimeout(quoteTimeoutRef.current)
       }
     }
-  }, [sectionId, showQuote, selectedCharacter, currentQuoteIndex, usedQuotes, lastQuoteTime])
+  }, [sectionId, showQuote, selectedCharacter, currentQuoteIndex, usedQuotes, lastQuoteTime, hasInitialized, isMounted])
 
   const currentCharacter = FRIENDS_CHARACTERS[selectedCharacter]
   const fallbackCharacter = FALLBACK_CHARACTERS[selectedCharacter]
@@ -162,15 +225,17 @@ export default function FriendsCharacter({
   const characterVariants = {
     hidden: { 
       opacity: 0, 
-      scale: 0.5,
+      scale: 0,
       x: position === 'left' ? -100 : 100,
-      y: 50
+      y: 50,
+      pointerEvents: 'none' as const
     },
     visible: { 
       opacity: opacity,
       scale: 0.8 + (opacity * 0.4), // Scale from 0.8 to 1.2 based on visibility
       x: 0,
       y: 0,
+      pointerEvents: 'none' as const,
       transition: {
         type: 'spring' as const,
         stiffness: 300,
@@ -180,11 +245,17 @@ export default function FriendsCharacter({
   }
 
   const quoteVariants = {
-    hidden: { opacity: 0, scale: 0.8, y: 20 },
+    hidden: { 
+      opacity: 0, 
+      scale: 0, 
+      y: 20,
+      pointerEvents: 'none' as const
+    },
     visible: { 
       opacity: 1, 
       scale: 1, 
       y: 0,
+      pointerEvents: 'none' as const,
       transition: {
         type: 'spring' as const,
         stiffness: 400,
@@ -193,29 +264,55 @@ export default function FriendsCharacter({
     }
   }
 
+  // Prevent hydration mismatch by not rendering until client-side
+  if (!isMounted) {
+    return null
+  }
+
   return (
     <div ref={sectionRef} className={`fixed top-1/2 transform -translate-y-1/2 ${positionClasses} z-10 pointer-events-none`} style={{ top: `calc(50% + ${offset}px)` }}>
-      <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            variants={characterVariants}
-            className="relative"
-          >
+      {/* Only render if initialized and should be visible */}
+      {hasInitialized && (
+        <motion.div
+          initial="hidden"
+          animate={isVisible ? "visible" : "hidden"}
+          variants={characterVariants}
+          className="relative"
+        >
             {/* Character Image or Fallback */}
             <div className="relative w-24 h-24 md:w-32 md:h-32">
               {!imageError ? (
                 <div className="relative w-full h-full">
-                  <Image
+                  {/* Loading placeholder */}
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse">
+                      <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br ${fallbackCharacter.color} flex items-center justify-center`}>
+                        <span className="text-sm md:text-base">{fallbackCharacter.emoji}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <img
+                    ref={imgRef}
                     src={currentCharacter.image}
                     alt={currentCharacter.name}
-                    fill
-                    className="object-contain drop-shadow-lg"
-                    onError={() => setImageError(true)}
-                    priority={false}
-                    sizes="(max-width: 768px) 96px, 128px"
+                    className={`w-full h-full object-contain drop-shadow-lg transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    onError={(e) => {
+                      // console.log(`❌ IMG element error for: ${currentCharacter.image}`)
+                      setImageError(true)
+                    }}
+                    onLoad={(e) => {
+                      // console.log(`✅ IMG element loaded: ${currentCharacter.image}`)
+                      setImageLoaded(true)
+                    }}
+                    loading="eager"
+                    style={{ 
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%'
+                    }}
                   />
                 </div>
               ) : (
@@ -250,41 +347,34 @@ export default function FriendsCharacter({
               </div>
             </div>
 
-            {/* Quote bubble */}
-            <AnimatePresence>
-              {showQuote && (
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                  variants={quoteVariants}
-                  className={`absolute ${position === 'left' ? 'left-full ml-4' : 'right-full mr-4'} top-1/2 transform -translate-y-1/2 w-48 md:w-56`}
-                >
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-600 relative">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {currentCharacter.quotes[currentQuoteIndex]}
-                    </p>
-                    
-                    {/* Speech bubble arrow */}
-                    <div className={`absolute top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 rotate-45 ${
-                      position === 'left' 
-                        ? '-left-1.5 border-r border-b' 
-                        : '-right-1.5 border-l border-t'
-                    }`}></div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {/* Quote bubble */}
+        <motion.div
+          animate={showQuote ? "visible" : "hidden"}
+          variants={quoteVariants}
+          className={`absolute ${position === 'left' ? 'left-full ml-4' : 'right-full mr-4'} top-1/2 transform -translate-y-1/2 w-48 md:w-56`}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-600 relative">
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+              {currentCharacter.quotes[currentQuoteIndex]}
+            </p>
+            
+            {/* Speech bubble arrow */}
+            <div className={`absolute top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 rotate-45 ${
+              position === 'left' 
+                ? '-left-1.5 border-r border-b' 
+                : '-right-1.5 border-l border-t'
+            }`}></div>
+          </div>
+        </motion.div>
 
-            {/* Floating animation effect */}
-            <motion.div
-              animate={{ y: [-2, 2, -2] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute inset-0 pointer-events-none"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {/* Floating animation effect */}
+          <motion.div
+            animate={{ y: [-2, 2, -2] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 pointer-events-none"
+          />
+        </motion.div>
+      )}
     </div>
   )
 }

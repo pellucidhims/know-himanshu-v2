@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { ThemeProvider } from './providers/theme-provider'
 import { ToastProvider } from './components/ui/toast'
+import FriendsImagePreloader from './components/ui/friends-image-preloader'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -66,9 +67,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Preload Friends character images for instant display */}
+        <link rel="preload" href="/friends-characters/ross_geller.png" as="image" type="image/png" />
+        <link rel="preload" href="/friends-characters/rachel_green.png" as="image" type="image/png" />
+        <link rel="preload" href="/friends-characters/monica_geller.png" as="image" type="image/png" />
+        <link rel="preload" href="/friends-characters/chandler_bing.png" as="image" type="image/png" />
+        <link rel="preload" href="/friends-characters/joey_tribbiani.png" as="image" type="image/png" />
+        <link rel="preload" href="/friends-characters/phoebe_buffay.png" as="image" type="image/png" />
+      </head>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider>
           <ToastProvider>
+            <FriendsImagePreloader />
             {children}
           </ToastProvider>
         </ThemeProvider>
