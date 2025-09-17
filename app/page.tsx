@@ -5,6 +5,7 @@ import Skills from './components/sections/skills'
 import Education from './components/sections/education'
 import Experience from './components/sections/experience'
 import Projects from './components/sections/projects'
+import Games from './components/sections/games'
 import Blog from './components/sections/blog'
 import Referral from './components/sections/referral'
 import Contact from './components/sections/contact'
@@ -21,6 +22,7 @@ export default function Home() {
       <Experience />
       
       <Projects />
+      <Games />
       <Blog />
       <Referral />
       <Contact />
@@ -30,8 +32,9 @@ export default function Home() {
       <FriendsCharacter sectionId="education" character="Rachel" position="left" offset={0} />
       <FriendsCharacter sectionId="project" character="Chandler" position="left" offset={30} />
       <FriendsCharacter sectionId="experience" character="Monica" position="right" offset={-30} />
-      <FriendsCharacter sectionId="contact" character="Joey" position="left" offset={20} />
-      <FriendsCharacter sectionId="referral" character="Phoebe" position="right" offset={20} />
+      <FriendsCharacter sectionId="games" character="Joey" position="right" offset={-20} />
+      <FriendsCharacter sectionId="contact" character="Phoebe" position="left" offset={20} />
+      <FriendsCharacter sectionId="referral" character="Ross" position="right" offset={20} />
       
       {/* Footer */}
       <footer className="bg-gray-900 dark:bg-dark-bg text-white py-8">

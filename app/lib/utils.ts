@@ -103,6 +103,8 @@ export const LINKS = [
   { id: 'education', label: 'Education', to: 'education' },
   { id: 'experience', label: 'Experience', to: 'experience' },
   { id: 'project', label: 'Projects', to: 'project' },
+  { id: 'games', label: 'Games', to: 'games' },
+  { id: 'game-zone', label: 'Game Zone', to: '/games', isExternal: true },
   { id: 'blog', label: 'Blog', to: 'blog' },
   { id: 'referral', label: 'Referrals', to: 'referral' },
   { id: 'contact', label: 'Contact', to: 'contact' },
