@@ -57,43 +57,26 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
-              {LINKS.map((link) => {
-                if (link.isExternal) {
-                  return (
-                    <Link
-                      key={link.id}
-                      href={link.to}
-                      className={`
-                        px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 cursor-pointer
-                        text-gray-700 dark:text-dark-text-secondary hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-dark-elevated
-                      `}
-                    >
-                      {link.label}
-                    </Link>
-                  )
-                }
-                
-                return (
-                  <ScrollLink
-                    key={link.id}
-                    to={link.to}
-                    spy={true}
-                    smooth={true}
-                    offset={-80}
-                    duration={500}
-                    onSetActive={() => setActiveSection(link.id)}
-                    className={`
-                      px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 cursor-pointer
-                      ${activeSection === link.id
-                        ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' 
-                        : 'text-gray-700 dark:text-dark-text-secondary hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-dark-elevated'
-                      }
-                    `}
-                  >
-                    {link.label}
-                  </ScrollLink>
-                )
-              })}
+              {LINKS.map((link) => (
+                <ScrollLink
+                  key={link.id}
+                  to={link.to}
+                  spy={true}
+                  smooth={true}
+                  offset={-80}
+                  duration={500}
+                  onSetActive={() => setActiveSection(link.id)}
+                  className={`
+                    px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 cursor-pointer
+                    ${activeSection === link.id
+                      ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                      : 'text-gray-700 dark:text-dark-text-secondary hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-dark-elevated'
+                    }
+                  `}
+                >
+                  {link.label}
+                </ScrollLink>
+              ))}
             </div>
           </div>
 
@@ -128,45 +111,27 @@ export default function Navbar() {
             className="md:hidden bg-white dark:bg-dark-surface border-t border-gray-200 dark:border-dark-border w-full overflow-hidden"
           >
             <div className="px-4 pt-2 pb-3 space-y-1 w-full max-w-full">
-              {LINKS.map((link) => {
-                if (link.isExternal) {
-                  return (
-                    <Link
-                      key={link.id}
-                      href={link.to}
-                      onClick={() => setIsOpen(false)}
-                      className={`
-                        block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 cursor-pointer
-                        text-gray-700 dark:text-dark-text-secondary hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-dark-elevated
-                      `}
-                    >
-                      {link.label}
-                    </Link>
-                  )
-                }
-                
-                return (
-                  <ScrollLink
-                    key={link.id}
-                    to={link.to}
-                    spy={true}
-                    smooth={true}
-                    offset={-80}
-                    duration={500}
-                    onClick={() => setIsOpen(false)}
-                    onSetActive={() => setActiveSection(link.id)}
-                    className={`
-                      block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 cursor-pointer
-                      ${activeSection === link.id
-                        ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' 
-                        : 'text-gray-700 dark:text-dark-text-secondary hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-dark-elevated'
-                      }
-                    `}
-                  >
-                    {link.label}
-                  </ScrollLink>
-                )
-              })}
+              {LINKS.map((link) => (
+                <ScrollLink
+                  key={link.id}
+                  to={link.to}
+                  spy={true}
+                  smooth={true}
+                  offset={-80}
+                  duration={500}
+                  onClick={() => setIsOpen(false)}
+                  onSetActive={() => setActiveSection(link.id)}
+                  className={`
+                    block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 cursor-pointer
+                    ${activeSection === link.id
+                      ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                      : 'text-gray-700 dark:text-dark-text-secondary hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-dark-elevated'
+                    }
+                  `}
+                >
+                  {link.label}
+                </ScrollLink>
+              ))}
             </div>
           </motion.div>
         )}

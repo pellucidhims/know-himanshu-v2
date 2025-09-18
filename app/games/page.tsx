@@ -2,9 +2,9 @@
 
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Gamepad2, Dices, Zap } from 'lucide-react'
+import { Gamepad2, Dices, Zap, Brain } from 'lucide-react'
 import { fadeIn, staggerContainer, zoomIn } from '../lib/utils'
-import Navbar from '../components/navigation/navbar'
+import GamesNavbar from '../components/navigation/games-navbar'
 
 const games = [
   {
@@ -28,6 +28,17 @@ const games = [
     iconColor: 'text-secondary-500',
     difficulty: 'Easy',
     players: '2 Players'
+  },
+  {
+    id: 'find-pairs',
+    title: 'Find Pairs',
+    description: 'Memory game where you match pairs of cards. Test your memory and concentration!',
+    icon: Brain,
+    color: 'from-purple-500 to-purple-700',
+    bgColor: 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20',
+    iconColor: 'text-purple-500',
+    difficulty: 'Easy',
+    players: '1 Player'
   }
 ]
 
@@ -40,7 +51,7 @@ export default function GamesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-bg dark:to-dark-surface">
-      <Navbar />
+      <GamesNavbar />
       
       <motion.main
         variants={staggerContainer(0.1, 0.2)}
@@ -72,7 +83,7 @@ export default function GamesPage() {
           {/* Games Grid */}
           <motion.div
             variants={staggerContainer(0.2, 0.4)}
-            className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto"
           >
             {games.map((game, index) => {
               const IconComponent = game.icon

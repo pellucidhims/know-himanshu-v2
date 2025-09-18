@@ -276,7 +276,7 @@ export default function Games() {
                 Ready for the <span className="text-purple-600 dark:text-purple-400">Ultimate</span> Challenge?
               </h3>
               <p className="text-lg text-gray-600 dark:text-dark-text-secondary max-w-2xl mx-auto">
-                🎯 Outsmart our AI in Tic-Tac-Toe • 🎲 Master the strategy in Puller • 🏆 Claim your victories!
+                🎯 Outsmart our AI in Tic-Tac-Toe • 🎲 Master the strategy in Puller • 🧠 Test your memory in Find Pairs • 🏆 Claim your victories!
               </p>
             </motion.div>
 
@@ -327,7 +327,7 @@ export default function Games() {
                   transition={{ duration: 2, repeat: Infinity, delay: 0 }}
                   className="text-2xl font-bold text-purple-600 dark:text-purple-400"
                 >
-                  2
+                  3
                 </motion.div>
                 <div className="text-sm text-gray-600 dark:text-dark-text-secondary">Epic Games</div>
               </div>

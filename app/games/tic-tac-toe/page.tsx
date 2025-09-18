@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { RotateCcw, Home, Trophy, Bot, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { fadeIn, staggerContainer, zoomIn } from '../../lib/utils'
+import GamesNavbar from '../../components/navigation/games-navbar'
 
 interface CellProps {
   value: string | null
@@ -201,8 +202,10 @@ export default function TicTacToePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-bg dark:to-dark-surface flex items-center justify-center p-4">
-      <motion.div
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-bg dark:to-dark-surface">
+      <GamesNavbar />
+      <div className="flex items-center justify-center p-4 pt-24">
+        <motion.div
         variants={staggerContainer(0.1, 0.2)}
         initial="hidden"
         animate="show"
@@ -213,16 +216,6 @@ export default function TicTacToePage() {
           variants={fadeIn('down', 0)}
           className="text-center mb-8"
         >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/games')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 dark:bg-dark-elevated/30 backdrop-blur-sm rounded-xl border border-white/20 dark:border-dark-border/30 text-gray-700 dark:text-dark-text-secondary hover:bg-white/20 dark:hover:bg-dark-elevated/50 transition-all duration-300 mb-6"
-          >
-            <Home className="w-4 h-4" />
-            Back to Games
-          </motion.button>
-          
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
             Tic Tac Toe
           </h1>
@@ -376,7 +369,8 @@ export default function TicTacToePage() {
             </div>
           </motion.div>
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   )
 }

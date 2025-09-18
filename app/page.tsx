@@ -10,6 +10,7 @@ import Blog from './components/sections/blog'
 import Referral from './components/sections/referral'
 import Contact from './components/sections/contact'
 import FriendsCharacter from './components/ui/friends-character'
+import FloatingGamesButton from './components/ui/floating-games-button'
 
 export default function Home() {
   return (
@@ -46,6 +47,9 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      {/* Floating Games Button */}
+      <FloatingGamesButton />
     </main>
   )
 }

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { RotateCcw, Home, Dices, Users, Trophy, ArrowLeft, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { fadeIn, staggerContainer, zoomIn } from '../../lib/utils'
+import GamesNavbar from '../../components/navigation/games-navbar'
 
 const DiceComponent = ({ value, isRolling }: { value: number | string, isRolling: boolean }) => {
   const getDiceDisplay = (val: number | string) => {
@@ -272,27 +273,18 @@ export default function PullerPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-bg dark:to-dark-surface">
+      <GamesNavbar />
       <motion.div
         variants={staggerContainer(0.1, 0.2)}
         initial="hidden"
         animate="show"
-        className="max-w-7xl mx-auto pt-20 px-4 sm:px-6 lg:px-8"
+        className="max-w-7xl mx-auto pt-24 px-4 sm:px-6 lg:px-8"
       >
         {/* Header */}
         <motion.div
           variants={fadeIn('down', 0)}
           className="text-center mb-6 sm:mb-8"
         >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/games')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 dark:bg-dark-elevated/30 backdrop-blur-sm rounded-xl border border-white/20 dark:border-dark-border/30 text-gray-700 dark:text-dark-text-secondary hover:bg-white/20 dark:hover:bg-dark-elevated/50 transition-all duration-300 mb-6"
-          >
-            <Home className="w-4 h-4" />
-            Back to Games
-          </motion.button>
-          
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
             Puller Game
           </h1>
