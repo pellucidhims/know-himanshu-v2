@@ -75,7 +75,7 @@ export default function Contact() {
         await submitContactForm(formData)
         showToast('Thank you for your message! I will get back to you soon.', 'success')
       } catch (apiError) {
-        console.log('API not available, using fallback')
+        // console.log('API not available, using fallback')
         await new Promise(resolve => setTimeout(resolve, 2000))
         showToast('Thank you for your message! I will get back to you soon.', 'success')
       }

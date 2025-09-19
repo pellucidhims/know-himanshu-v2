@@ -33,7 +33,7 @@ export default function Experience() {
         setExperiences(response.content)
       }
     } catch (error) {
-      console.error('Failed to fetch experiences, using fallback data:', error)
+      // console.error('Failed to fetch experiences, using fallback data:', error)
       // Keep using the fallback data from EXPERIENCES
     } finally {
       setLoading(false)

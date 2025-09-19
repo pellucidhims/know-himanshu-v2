@@ -1,10 +1,61 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Gamepad2, Dices, Zap, Brain } from 'lucide-react'
+import { Gamepad2, Dices, Zap, Brain, Users } from 'lucide-react'
 import { fadeIn, staggerContainer, zoomIn } from '../lib/utils'
 import GamesNavbar from '../components/navigation/games-navbar'
+
+const JoinRoomSection = () => {
+  const router = useRouter()
+  const [roomId, setRoomId] = useState('')
+
+  const handleJoinRoom = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (roomId.trim()) {
+      router.push(`/games/room/${roomId.trim().toUpperCase()}`)
+    }
+  }
+
+  return (
+    <motion.div
+      variants={fadeIn('up', 0.4)}
+      className="text-center mb-8"
+    >
+      <div className="bg-white/10 dark:bg-dark-elevated/30 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-dark-border/30 p-6 max-w-md mx-auto">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Users className="w-5 h-5 text-primary-500" />
+          <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text-primary">
+            Join Multiplayer Room
+          </h3>
+        </div>
+        <form onSubmit={handleJoinRoom} className="flex gap-2">
+          <input
+            type="text"
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value.toUpperCase())}
+            placeholder="Enter Room ID (e.g., ABC12345)..."
+            maxLength={8}
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-dark-surface dark:text-dark-text-primary uppercase placeholder:normal-case"
+          />
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            type="submit"
+            disabled={!roomId.trim()}
+            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Join
+          </motion.button>
+        </form>
+        <p className="text-xs text-gray-500 dark:text-dark-text-secondary mt-2">
+          Enter the room ID shared by your friend to join their game
+        </p>
+      </div>
+    </motion.div>
+  )
+}
 
 const games = [
   {
@@ -79,6 +130,9 @@ export default function GamesPage() {
               Challenge yourself with these interactive games. Test your strategy, luck, and skills!
             </p>
           </motion.div>
+
+          {/* Join Room Section */}
+          <JoinRoomSection />
 
           {/* Games Grid */}
           <motion.div

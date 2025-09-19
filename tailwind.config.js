@@ -115,6 +115,9 @@ module.exports = {
         'dark-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3)',
         'glow': '0 0 20px rgba(59, 130, 246, 0.5)',
         'glow-secondary': '0 0 20px rgba(245, 158, 11, 0.5)'
+      },
+      gridTemplateColumns: {
+        '15': 'repeat(15, minmax(0, 1fr))',
       }
     },
   },

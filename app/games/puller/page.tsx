@@ -6,6 +6,128 @@ import { RotateCcw, Home, Dices, Users, Trophy, ArrowLeft, ArrowRight } from 'lu
 import { useRouter } from 'next/navigation'
 import { fadeIn, staggerContainer, zoomIn } from '../../lib/utils'
 import GamesNavbar from '../../components/navigation/games-navbar'
+import { useMultiplayer } from '../../lib/multiplayer/useMultiplayer'
+
+const MultiplayerButton = () => {
+  const router = useRouter()
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [avatarName, setAvatarName] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+
+  const {
+    createRoom,
+    isConnected,
+    currentRoom,
+    currentPlayer,
+    error,
+    isLoading
+  } = useMultiplayer()
+
+  const handleCreateRoom = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!avatarName.trim()) return
+
+    setIsCreating(true)
+    createRoom('puller', avatarName.trim())
+  }
+
+  // Redirect to room when created (with small delay to ensure state is fully set)
+  useEffect(() => {
+    if (currentRoom && currentPlayer) {
+      // Small delay to ensure all state is properly set before redirect
+      setTimeout(() => {
+        router.push(`/games/room/${currentRoom.roomId}`)
+      }, 100)
+    }
+  }, [currentRoom, currentPlayer, router])
+
+  return (
+    <div className="relative">
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowCreateForm(true)}
+        className="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+      >
+        <Users className="w-5 h-5" />
+        🌐 Play Online
+      </motion.button>
+
+      <AnimatePresence>
+        {showCreateForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white dark:bg-dark-elevated rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-dark-border"
+            >
+              <h3 className="text-xl font-bold text-gray-900 dark:text-dark-text-primary mb-4 text-center">
+                Create Multiplayer Room
+              </h3>
+              
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-600/30 rounded-lg">
+                  <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleCreateRoom} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
+                    Your display name
+                  </label>
+                  <input
+                    type="text"
+                    value={avatarName}
+                    onChange={(e) => setAvatarName(e.target.value)}
+                    placeholder="Enter your name..."
+                    maxLength={20}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-dark-surface dark:text-dark-text-primary"
+                  />
+                </div>
+                
+                <div className="flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    onClick={() => setShowCreateForm(false)}
+                    className="flex-1 px-4 py-2 bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-dark-text-secondary rounded-lg hover:bg-gray-200 dark:hover:bg-dark-border transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="submit"
+                    disabled={!avatarName.trim() || !isConnected || isCreating || isLoading}
+                    className="flex-1 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCreating || isLoading ? 'Creating...' : 'Create Room'}
+                  </motion.button>
+                </div>
+              </form>
+
+              <div className="mt-4 text-center">
+                <p className="text-xs text-gray-500 dark:text-dark-text-secondary">
+                  {isConnected ? '🟢 Connected to server' : '🔴 Connecting...'}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 const DiceComponent = ({ value, isRolling }: { value: number | string, isRolling: boolean }) => {
   const getDiceDisplay = (val: number | string) => {
@@ -280,18 +402,32 @@ export default function PullerPage() {
         animate="show"
         className="max-w-7xl mx-auto pt-24 px-4 sm:px-6 lg:px-8"
       >
-        {/* Header */}
-        <motion.div
-          variants={fadeIn('down', 0)}
-          className="text-center mb-6 sm:mb-8"
-        >
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
-            Puller Game
-          </h1>
-          <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base">
-            Roll the dice and pull the token to your side!
-          </p>
-        </motion.div>
+            {/* Header */}
+            <motion.div
+              variants={fadeIn('down', 0)}
+              className="text-center mb-6 sm:mb-8"
+            >
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
+                Puller Game
+              </h1>
+              <p className="text-gray-600 dark:text-dark-text-secondary text-sm sm:text-base mb-6">
+                Roll the dice and pull the token to your side!
+              </p>
+              
+              {/* Game Mode Selection */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {/* Current single player game continues below */}}
+                  className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                >
+                  🤖 Play vs AI
+                </motion.button>
+                
+                <MultiplayerButton />
+              </div>
+            </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
           {/* Game Stats */}
