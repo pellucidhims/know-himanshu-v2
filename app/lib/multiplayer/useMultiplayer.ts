@@ -51,28 +51,28 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
   // Auto-connect to multiplayer server on hook initialization
   useEffect(() => {
     const currentlyConnected = socketManager.isConnected()
-    console.log('Auto-connect check:', { currentlyConnected })
+    // console.log('Auto-connect check:', { currentlyConnected })
     
     if (!currentlyConnected) {
-      console.log('Auto-connecting to multiplayer server...')
+    //   console.log('Auto-connecting to multiplayer server...')
       const apiUrl = process.env.NODE_ENV === 'production' 
-        ? process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com'
+        ? process.env.NEXT_PUBLIC_API_BASE_URL || 'https://know-himanshu-api.vercel.app'
         : 'http://localhost:8800'
       
-      console.log('Connecting to API URL:', apiUrl)
+    //   console.log('Connecting to API URL:', apiUrl)
       
       try {
         socketManager.connect(apiUrl)
         updateState({ isLoading: true })
       } catch (error) {
-        console.error('Auto-connect failed:', error)
+        // console.error('Auto-connect failed:', error)
         updateState({ 
           error: 'Failed to connect to multiplayer server',
           isLoading: false 
         })
       }
     } else {
-      console.log('Already connected to multiplayer server')
+    //   console.log('Already connected to multiplayer server')
       updateState({ isConnected: true, isLoading: false })
     }
   }, [updateState])
@@ -173,26 +173,26 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
   }, [state.currentRoom, state.currentPlayer, updateState])
 
   const makeMove = useCallback((moveData: any) => {
-    console.log('📤 makeMove called:', { 
-      moveData, 
-      hasRoom: !!state.currentRoom, 
-      hasPlayer: !!state.currentPlayer,
-      roomId: state.currentRoom?.roomId,
-      playerId: state.currentPlayer?.playerId 
-    })
+    // console.log('📤 makeMove called:', { 
+    //   moveData, 
+    //   hasRoom: !!state.currentRoom, 
+    //   hasPlayer: !!state.currentPlayer,
+    //   roomId: state.currentRoom?.roomId,
+    //   playerId: state.currentPlayer?.playerId 
+    // })
     
     if (!state.currentRoom || !state.currentPlayer) {
-      console.log('❌ makeMove failed: No active room or player')
+    //   console.log('❌ makeMove failed: No active room or player')
       updateState({ error: 'No active room or player' })
       return
     }
 
     try {
-      console.log('🚀 Sending move to server via socket:', {
-        roomId: state.currentRoom.roomId,
-        playerId: state.currentPlayer.playerId,
-        moveData
-      })
+    //   console.log('🚀 Sending move to server via socket:', {
+    //     roomId: state.currentRoom.roomId,
+    //     playerId: state.currentPlayer.playerId,
+    //     moveData
+    //   })
       socketManager.makeMove(state.currentRoom.roomId, state.currentPlayer.playerId, moveData)
     } catch (error) {
       console.error('❌ Failed to send move:', error)
@@ -259,51 +259,51 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
   // Function to identify current player based on playerId
   const identifyCurrentPlayer = useCallback((playerId: string) => {
     if (!state.currentRoom || !playerId) {
-      console.log('🚫 Cannot identify player: No room or playerId', { 
-        hasRoom: !!state.currentRoom, 
-        playerId 
-      })
+    //   console.log('🚫 Cannot identify player: No room or playerId', { 
+    //     hasRoom: !!state.currentRoom, 
+    //     playerId 
+    //   })
       return
     }
 
     const currentPlayer = state.currentRoom.players.find(p => p.playerId === playerId)
     if (currentPlayer) {
-      console.log('✅ Player identified:', { 
-        playerId, 
-        avatarName: currentPlayer.avatarName, 
-        isLeader: currentPlayer.isLeader 
-      })
+    //   console.log('✅ Player identified:', { 
+    //     playerId, 
+    //     avatarName: currentPlayer.avatarName, 
+    //     isLeader: currentPlayer.isLeader 
+    //   })
       currentPlayerIdRef.current = playerId
       updateState({ currentPlayer })
     } else {
-      console.log('❌ Player not found in room:', { 
-        playerId, 
-        playersInRoom: state.currentRoom.players.map(p => ({ id: p.playerId, name: p.avatarName }))
-      })
+    //   console.log('❌ Player not found in room:', { 
+    //     playerId, 
+    //     playersInRoom: state.currentRoom.players.map(p => ({ id: p.playerId, name: p.avatarName }))
+    //   })
     }
   }, [state.currentRoom, updateState])
 
   // Utility functions
   const isMyTurn = useCallback(() => {
     if (!state.currentRoom || !state.currentPlayer) {
-      console.log('🚫 isMyTurn: No room or player', { 
-        hasRoom: !!state.currentRoom, 
-        hasPlayer: !!state.currentPlayer 
-      })
+    //   console.log('🚫 isMyTurn: No room or player', { 
+    //     hasRoom: !!state.currentRoom, 
+    //     hasPlayer: !!state.currentPlayer 
+    //   })
       return false
     }
     
     const currentPlayerInTurn = state.currentRoom.players[state.currentRoom.currentPlayerIndex]
     const result = currentPlayerInTurn?.playerId === state.currentPlayer.playerId
     
-    console.log('🎯 isMyTurn calculation:', {
-      currentPlayerIndex: state.currentRoom.currentPlayerIndex,
-      currentPlayerInTurn: currentPlayerInTurn?.avatarName,
-      currentPlayerInTurnId: currentPlayerInTurn?.playerId,
-      myPlayerId: state.currentPlayer.playerId,
-      myPlayerName: state.currentPlayer.avatarName,
-      result
-    })
+    // console.log('🎯 isMyTurn calculation:', {
+    //   currentPlayerIndex: state.currentRoom.currentPlayerIndex,
+    //   currentPlayerInTurn: currentPlayerInTurn?.avatarName,
+    //   currentPlayerInTurnId: currentPlayerInTurn?.playerId,
+    //   myPlayerId: state.currentPlayer.playerId,
+    //   myPlayerName: state.currentPlayer.avatarName,
+    //   result
+    // })
     
     return result
   }, [state.currentRoom, state.currentPlayer])
@@ -395,23 +395,23 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
   useEffect(() => {
     const events: MultiplayerEvents = {
       onConnect: () => {
-        console.log('Socket.IO connected successfully!')
+        // console.log('Socket.IO connected successfully!')
         updateState({ isConnected: true, isLoading: false, error: null })
       },
 
       onDisconnect: () => {
-        console.log('Socket.IO disconnected')
+        // console.log('Socket.IO disconnected')
         updateState({ isConnected: false })
         stopTurnTimer()
       },
 
       onRoomCreated: (data) => {
-        console.log('onRoomCreated event received:', {
-          roomId: data.room.roomId,
-          playerId: data.playerId,
-          playerCount: data.room.players.length,
-          roomStatus: data.room.status
-        })
+        // console.log('onRoomCreated event received:', {
+        //   roomId: data.room.roomId,
+        //   playerId: data.playerId,
+        //   playerCount: data.room.players.length,
+        //   roomStatus: data.room.status
+        // })
         const currentPlayer = data.room.players.find(p => p.playerId === data.playerId)
         currentPlayerIdRef.current = data.playerId
         updateState({
@@ -429,14 +429,14 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
             avatarName: currentPlayer.avatarName,
             isLeader: currentPlayer.isLeader
           }))
-          console.log('Stored room creator session data:', currentPlayer.avatarName)
+        //   console.log('Stored room creator session data:', currentPlayer.avatarName)
         }
         
-        console.log('Room creation state updated:', {
-          hasCurrentRoom: !!data.room,
-          hasCurrentPlayer: !!currentPlayer,
-          isLeader: currentPlayer?.isLeader
-        })
+        // console.log('Room creation state updated:', {
+        //   hasCurrentRoom: !!data.room,
+        //   hasCurrentPlayer: !!currentPlayer,
+        //   isLeader: currentPlayer?.isLeader
+        // })
       },
 
       onRoomJoined: (data) => {
@@ -456,19 +456,19 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
             avatarName: currentPlayer.avatarName,
             isLeader: currentPlayer.isLeader
           }))
-          console.log('Stored room joiner session data:', currentPlayer.avatarName)
+        //   console.log('Stored room joiner session data:', currentPlayer.avatarName)
         }
       },
 
       onRoomInfo: (data) => {
-        console.log('onRoomInfo event received:', {
-          roomId: data.room.roomId,
-          hasPlayerId: !!data.playerId,
-          playerId: data.playerId,
-          playerCount: data.room.players.length,
-          roomStatus: data.room.status,
-          chatMessages: data.room.chatMessages?.length || 0
-        })
+        // console.log('onRoomInfo event received:', {
+        //   roomId: data.room.roomId,
+        //   hasPlayerId: !!data.playerId,
+        //   playerId: data.playerId,
+        //   playerCount: data.room.players.length,
+        //   roomStatus: data.room.status,
+        //   chatMessages: data.room.chatMessages?.length || 0
+        // })
         
         // Load persisted chat messages
         const chatMessages = data.room.chatMessages || []
@@ -484,12 +484,12 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
             isLoading: false,
             error: null
           })
-          console.log('Room info state updated with player:', {
-            hasCurrentRoom: !!data.room,
-            hasCurrentPlayer: !!currentPlayer,
-            isLeader: currentPlayer?.isLeader,
-            chatMessages: chatMessages.length
-          })
+        //   console.log('Room info state updated with player:', {
+        //     hasCurrentRoom: !!data.room,
+        //     hasCurrentPlayer: !!currentPlayer,
+        //     isLeader: currentPlayer?.isLeader,
+        //     chatMessages: chatMessages.length
+        //   })
         } else {
           // Just room info without player data
           updateState({
@@ -498,7 +498,7 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
             isLoading: false,
             error: null
           })
-          console.log('Room info state updated without player data')
+        //   console.log('Room info state updated without player data')
         }
       },
 
@@ -507,34 +507,34 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
       },
 
       onGameStarted: (data) => {
-        console.log('🎮 onGameStarted event received:', {
-          roomId: data.room.roomId,
-          currentPlayerIndex: data.room.currentPlayerIndex,
-          playersCount: data.room.players.length,
-          roomStatus: data.room.status,
-          players: data.room.players.map((p, i) => ({ id: p.playerId, name: p.avatarName, index: i }))
-        })
+        // console.log('🎮 onGameStarted event received:', {
+        //   roomId: data.room.roomId,
+        //   currentPlayerIndex: data.room.currentPlayerIndex,
+        //   playersCount: data.room.players.length,
+        //   roomStatus: data.room.status,
+        //   players: data.room.players.map((p, i) => ({ id: p.playerId, name: p.avatarName, index: i }))
+        // })
         updateState({ currentRoom: data.room })
       },
 
       onMoveMade: (data) => {
-        console.log('📨 onMoveMade event received:', {
-          roomId: data.room.roomId,
-          currentPlayerIndex: data.room.currentPlayerIndex,
-          playersCount: data.room.players.length,
-          gameState: data.gameState,
-          tokenPosition: data.gameState?.tokenPosition
-        })
+        // console.log('📨 onMoveMade event received:', {
+        //   roomId: data.room.roomId,
+        //   currentPlayerIndex: data.room.currentPlayerIndex,
+        //   playersCount: data.room.players.length,
+        //   gameState: data.gameState,
+        //   tokenPosition: data.gameState?.tokenPosition
+        // })
         updateState({ currentRoom: data.room })
         stopTurnTimer()
       },
 
       onGameEnded: (data) => {
-        console.log('🏁 onGameEnded event received:', {
-          roomId: data.room.roomId,
-          winner: data.winner,
-          roomStatus: data.room.status
-        })
+        // console.log('🏁 onGameEnded event received:', {
+        //   roomId: data.room.roomId,
+        //   winner: data.winner,
+        //   roomStatus: data.room.status
+        // })
         updateState({ currentRoom: data.room })
         stopTurnTimer()
       },

@@ -17,11 +17,11 @@ interface DiceComponentProps {
 
 const DiceComponent = ({ value, isRolling, onClick, clickable = false }: DiceComponentProps) => {
   const handleClick = (event: React.MouseEvent) => {
-    console.log('🎯 DiceComponent clicked!', { clickable, isRolling, hasOnClick: !!onClick })
+    // console.log('🎯 DiceComponent clicked!', { clickable, isRolling, hasOnClick: !!onClick })
     if (clickable && !isRolling && onClick) {
       onClick(event)
     } else {
-      console.log('🚫 DiceComponent click ignored:', { clickable, isRolling, hasOnClick: !!onClick })
+    //   console.log('🚫 DiceComponent click ignored:', { clickable, isRolling, hasOnClick: !!onClick })
     }
   }
 
@@ -118,13 +118,13 @@ export default function MultiplayerPullerGame() {
 
   // Debug game state (only log when it changes)
   useEffect(() => {
-    console.log('🎮 Game state updated:', { 
-      gameState, 
-      hasGameState: !!currentRoom?.gameState,
-      lastMoveValue: gameState.lastMove?.diceValue,
-      tokenPosition: gameState.tokenPosition,
-      currentPlayer: gameState.currentPlayer
-    })
+    // console.log('🎮 Game state updated:', { 
+    //   gameState, 
+    //   hasGameState: !!currentRoom?.gameState,
+    //   lastMoveValue: gameState.lastMove?.diceValue,
+    //   tokenPosition: gameState.tokenPosition,
+    //   currentPlayer: gameState.currentPlayer
+    // })
   }, [gameState, currentRoom?.gameState])
 
   // Get current player in turn
@@ -134,27 +134,27 @@ export default function MultiplayerPullerGame() {
   const isMyTurnToPlay = useMemo(() => {
     const myTurn = isMyTurn()
     const gameActive = currentRoom?.status === 'active'
-    console.log('🎯 Turn calculation:', { 
-      myTurn, 
-      gameActive, 
-      isMyTurnToPlay: myTurn && gameActive,
-      currentPlayerIndex: currentRoom?.currentPlayerIndex,
-      myPlayerId: playerId,
-      roomStatus: currentRoom?.status 
-    })
+    // console.log('🎯 Turn calculation:', { 
+    //   myTurn, 
+    //   gameActive, 
+    //   isMyTurnToPlay: myTurn && gameActive,
+    //   currentPlayerIndex: currentRoom?.currentPlayerIndex,
+    //   myPlayerId: playerId,
+    //   roomStatus: currentRoom?.status 
+    // })
     return myTurn && gameActive
   }, [isMyTurn, currentRoom?.status, currentRoom?.currentPlayerIndex, playerId])
 
   // Handle dice roll
   const handleDiceRoll = useCallback(async (event?: React.MouseEvent) => {
-    console.log('🎲 Dice clicked! Event details:', { 
-      eventType: event?.type,
-      isMyTurnToPlay, 
-      isRolling, 
-      roomStatus: currentRoom?.status,
-      currentPlayerIndex: currentRoom?.currentPlayerIndex,
-      myPlayerId: playerId 
-    })
+    // console.log('🎲 Dice clicked! Event details:', { 
+    //   eventType: event?.type,
+    //   isMyTurnToPlay, 
+    //   isRolling, 
+    //   roomStatus: currentRoom?.status,
+    //   currentPlayerIndex: currentRoom?.currentPlayerIndex,
+    //   myPlayerId: playerId 
+    // })
     
     // Prevent event bubbling
     if (event) {
@@ -163,19 +163,19 @@ export default function MultiplayerPullerGame() {
     }
     
     if (!isMyTurnToPlay || isRolling) {
-      console.log('❌ Dice roll blocked:', { isMyTurnToPlay, isRolling })
+    //   console.log('❌ Dice roll blocked:', { isMyTurnToPlay, isRolling })
       return
     }
 
-    console.log('✅ Dice roll proceeding...')
+    // console.log('✅ Dice roll proceeding...')
     setIsRolling(true)
     
     // Simulate dice roll animation
     const diceValue = Math.floor(Math.random() * 6) + 1
-    console.log('🎲 Rolling dice value:', diceValue)
+    // console.log('🎲 Rolling dice value:', diceValue)
     
     setTimeout(() => {
-      console.log('📤 Sending move to server:', { diceValue })
+    //   console.log('📤 Sending move to server:', { diceValue })
       makeMove({ diceValue })
       setIsRolling(false)
     }, 1000)
@@ -231,18 +231,18 @@ export default function MultiplayerPullerGame() {
 
   // Debug dice props
   useEffect(() => {
-    console.log('🎰 DiceComponent props:', { 
-      value: gameState.lastMove?.diceValue || 1,
-      isRolling,
-      clickable: isMyTurnToPlay,
-      hasHandler: !!handleDiceRoll 
-    })
+    // console.log('🎰 DiceComponent props:', { 
+    //   value: gameState.lastMove?.diceValue || 1,
+    //   isRolling,
+    //   clickable: isMyTurnToPlay,
+    //   hasHandler: !!handleDiceRoll 
+    // })
   }, [gameState.lastMove?.diceValue, isRolling, isMyTurnToPlay, handleDiceRoll])
 
   // Fetch room info when page loads (for refresh scenarios)
   useEffect(() => {
     if (isConnected && !currentRoom && !isLoading && roomId && playerId) {
-      console.log('🔄 Page refresh detected, fetching room info:', { roomId, playerId })
+    //   console.log('🔄 Page refresh detected, fetching room info:', { roomId, playerId })
       getRoomInfo(roomId, playerId)
     }
   }, [isConnected, currentRoom, isLoading, roomId, playerId, getRoomInfo])
@@ -250,7 +250,7 @@ export default function MultiplayerPullerGame() {
   // Identify current player when room data is available
   useEffect(() => {
     if (currentRoom && playerId && !currentPlayer) {
-      console.log('🔍 Attempting to identify current player:', { playerId, hasRoom: !!currentRoom })
+    //   console.log('🔍 Attempting to identify current player:', { playerId, hasRoom: !!currentRoom })
       identifyCurrentPlayer(playerId)
     }
   }, [currentRoom, playerId, currentPlayer, identifyCurrentPlayer])
@@ -263,11 +263,11 @@ export default function MultiplayerPullerGame() {
     if (currentMessageCount > previousMessageCount && previousMessageCount > 0) {
       // New message(s) received
       const newMessageCount = currentMessageCount - previousMessageCount
-      console.log('💬 New chat message(s) received in game:', {
-        newMessages: newMessageCount,
-        totalMessages: currentMessageCount,
-        chatOpen: showChat
-      })
+    //   console.log('💬 New chat message(s) received in game:', {
+    //     newMessages: newMessageCount,
+    //     totalMessages: currentMessageCount,
+    //     chatOpen: showChat
+    //   })
 
       if (showChat) {
         // Chat is open - auto-scroll to bottom

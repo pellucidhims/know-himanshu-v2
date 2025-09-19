@@ -86,7 +86,7 @@ class SocketManager {
   private maxReconnectAttempts = 5
   private isReconnecting = false
 
-  connect(apiUrl: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8800') {
+  connect(apiUrl: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8800') {
     if (this.socket?.connected) {
       return this.socket
     }
@@ -115,14 +115,14 @@ class SocketManager {
 
     // Connection events
     this.socket.on('connect', () => {
-      console.log('Connected to multiplayer server')
+      // console.log('Connected to multiplayer server')
       this.reconnectAttempts = 0
       this.isReconnecting = false
       this.events.onConnect?.()
     })
 
     this.socket.on('disconnect', (reason) => {
-      console.log('Disconnected from multiplayer server:', reason)
+      // console.log('Disconnected from multiplayer server:', reason)
       this.events.onDisconnect?.()
       
       if (reason === 'io server disconnect') {
@@ -132,7 +132,7 @@ class SocketManager {
     })
 
     this.socket.on('reconnect', () => {
-      console.log('Reconnected to multiplayer server')
+      // console.log('Reconnected to multiplayer server')
       this.reconnectAttempts = 0
       this.isReconnecting = false
       this.events.onReconnect?.()

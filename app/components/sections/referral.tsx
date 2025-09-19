@@ -155,7 +155,7 @@ export default function Referral() {
         setReferralApps(transformedData)
       }
     } catch (error) {
-      console.error('Failed to fetch referrals, using fallback data:', error)
+      // console.error('Failed to fetch referrals, using fallback data:', error)
       // Keep using the original fallback data
       setReferralApps(referralApps)
     } finally {
@@ -168,7 +168,7 @@ export default function Referral() {
       navigator.clipboard.writeText(code).then(() => {
         showToast(`Referral code "${code}" copied to clipboard!`, 'success')
       }).catch(err => {
-        console.error('Failed to copy code:', err)
+        // console.error('Failed to copy code:', err)
         // Fallback for older browsers
         const textArea = document.createElement('textarea')
         textArea.value = code

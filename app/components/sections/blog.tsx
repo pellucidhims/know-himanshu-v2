@@ -92,7 +92,7 @@ export default function Blog() {
         throw new Error('Failed to fetch from Medium')
       }
     } catch (err) {
-      console.log('Using fallback blog posts:', err)
+      // console.log('Using fallback blog posts:', err)
       setBlogPosts(mockBlogPosts)
     } finally {
       setLoading(false)

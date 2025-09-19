@@ -63,7 +63,7 @@ export default function AdminPanel() {
       setVisitors(response.visitorMessages || [])
     } catch (error: any) {
       showToast('Failed to fetch messages. Please try again.', 'error')
-      console.error('Error fetching messages:', error)
+      // console.error('Error fetching messages:', error)
     } finally {
       setMessagesLoading(false)
     }

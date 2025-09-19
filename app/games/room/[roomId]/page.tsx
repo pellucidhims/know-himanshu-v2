@@ -48,60 +48,41 @@ export default function GameRoomPage() {
     myPlayerId
   } = useMultiplayer()
 
-  // Add a simple connectivity test
-  useEffect(() => {
-    // Test if backend is reachable via HTTP
-    if (typeof window !== 'undefined') {
-      fetch('http://localhost:8800/')
-        .then(response => {
-          console.log('Backend health check:', response.status)
-          if (response.ok) {
-            console.log('✅ Backend is reachable via HTTP')
-          } else {
-            console.log('❌ Backend HTTP error:', response.status)
-          }
-        })
-        .catch(error => {
-          console.log('❌ Backend not reachable:', error.message)
-        })
-    }
-  }, [])
-
   // Check session storage for existing room membership - trigger when connected
   useEffect(() => {
-    console.log('Session storage check:', { roomId, hasJoined, isConnected })
+    // console.log('Session storage check:', { roomId, hasJoined, isConnected })
     const storedRoomData = sessionStorage.getItem(`room_${roomId}`)
-    console.log('Session storage raw data:', storedRoomData)
+    // console.log('Session storage raw data:', storedRoomData)
     
     if (storedRoomData && !hasJoined && isConnected && !hasTriedAutoJoin) {
       try {
         const { playerId, avatarName: storedAvatarName, isLeader } = JSON.parse(storedRoomData)
-        console.log('Found stored room data:', { playerId, storedAvatarName, isLeader })
-        console.log('Current state:', { currentRoom: !!currentRoom, isConnected })
+        // console.log('Found stored room data:', { playerId, storedAvatarName, isLeader })
+        // console.log('Current state:', { currentRoom: !!currentRoom, isConnected })
         
         // If we have stored data but no current room, try to reconnect
         if (!currentRoom) {
-          console.log('Attempting to reconnect using stored session data')
+        //   console.log('Attempting to reconnect using stored session data')
           getRoomInfo(roomId, playerId)
           setHasTriedAutoJoin(true)
           
           // Give a bit more time for the connection to establish
           setTimeout(() => {
             if (!hasJoined && !currentRoom) {
-              console.log('Reconnection timeout, user may need to manually join')
+            //   console.log('Reconnection timeout, user may need to manually join')
             }
           }, 3000)
         }
       } catch (error) {
-        console.error('Error parsing stored room data:', error)
+        // console.error('Error parsing stored room data:', error)
         sessionStorage.removeItem(`room_${roomId}`)
       }
     } else if (!storedRoomData) {
-      console.log('No session storage data found for room:', roomId)
+    //   console.log('No session storage data found for room:', roomId)
     } else if (!isConnected) {
-      console.log('Have session data but not connected yet, waiting for connection...')
+    //   console.log('Have session data but not connected yet, waiting for connection...')
     } else {
-      console.log('Session data found but user already hasJoined')
+    //   console.log('Session data found but user already hasJoined')
     }
   }, [roomId, currentRoom, isConnected, getRoomInfo, hasJoined, hasTriedAutoJoin])
 
@@ -110,24 +91,24 @@ export default function GameRoomPage() {
     // Only reset if we have a currentRoom but it doesn't match the URL roomId
     // This prevents interference between different room visits
     if (currentRoom && currentRoom.roomId !== roomId) {
-      console.log('Visiting different room, resetting state. Current:', currentRoom.roomId, 'Visiting:', roomId)
+    //   console.log('Visiting different room, resetting state. Current:', currentRoom.roomId, 'Visiting:', roomId)
       resetRoomState()
     }
   }, [roomId, currentRoom, resetRoomState])
 
   // Auto-detect if user is already in the room (room creator or returning player)
   useEffect(() => {
-    console.log('Room page state check:', {
-      roomId,
-      hasCurrentRoom: !!currentRoom,
-      currentRoomId: currentRoom?.roomId,
-      hasJoined,
-      isLoading,
-      isConnected,
-      player: currentPlayer?.avatarName,
-      isLeader: currentPlayer?.isLeader,
-      playersInRoom: currentRoom?.players?.length || 0
-    })
+    // console.log('Room page state check:', {
+    //   roomId,
+    //   hasCurrentRoom: !!currentRoom,
+    //   currentRoomId: currentRoom?.roomId,
+    //   hasJoined,
+    //   isLoading,
+    //   isConnected,
+    //   player: currentPlayer?.avatarName,
+    //   isLeader: currentPlayer?.isLeader,
+    //   playersInRoom: currentRoom?.players?.length || 0
+    // })
 
     // Auto-join logic: Check if we should automatically show the lobby
     if (currentRoom && currentRoom.roomId === roomId && !hasJoined) {
@@ -135,7 +116,7 @@ export default function GameRoomPage() {
         // Verify that the current player is actually in the room's player list
         const playerInRoom = currentRoom.players.some(p => p.playerId === currentPlayer.playerId)
         if (playerInRoom) {
-          console.log('Auto-joining room for confirmed player:', currentPlayer.avatarName)
+        //   console.log('Auto-joining room for confirmed player:', currentPlayer.avatarName)
           setHasJoined(true)
           
           // Store room membership in session storage
@@ -145,12 +126,12 @@ export default function GameRoomPage() {
             isLeader: currentPlayer.isLeader
           }))
         } else {
-          console.log('Current player not found in room player list, requiring manual join')
+        //   console.log('Current player not found in room player list, requiring manual join')
         }
       } else {
         // Edge case: We have room data but no currentPlayer
         // This might happen when the room info was fetched but we haven't identified the player yet
-        console.log('Have room data but no currentPlayer, waiting for player identification')
+        // console.log('Have room data but no currentPlayer, waiting for player identification')
       }
     }
   }, [currentRoom, roomId, hasJoined, currentPlayer, isLoading, isConnected])
@@ -158,7 +139,7 @@ export default function GameRoomPage() {
   // Request room info for users who might already be in the room (reconnection scenarios)
   useEffect(() => {
     if (isConnected && !currentRoom && !isLoading && roomId && hasJoined && !hasTriedAutoJoin) {
-      console.log('User reconnecting, requesting room info for:', roomId)
+    //   console.log('User reconnecting, requesting room info for:', roomId)
       // Get stored player ID for reconnection
       const storedRoomData = sessionStorage.getItem(`room_${roomId}`)
       let storedPlayerId = null
@@ -193,7 +174,7 @@ export default function GameRoomPage() {
         avatarName: currentPlayer.avatarName,
         isLeader: currentPlayer.isLeader
       }))
-      console.log('Stored session data for manual join:', currentPlayer.avatarName)
+    //   console.log('Stored session data for manual join:', currentPlayer.avatarName)
     }
   }, [hasJoined, currentPlayer, currentRoom, roomId, isManualJoin])
 
@@ -263,11 +244,11 @@ export default function GameRoomPage() {
     if (currentMessageCount > previousMessageCount && previousMessageCount > 0) {
       // New message(s) received
       const newMessageCount = currentMessageCount - previousMessageCount
-      console.log('💬 New chat message(s) received:', {
-        newMessages: newMessageCount,
-        totalMessages: currentMessageCount,
-        chatOpen: showChat
-      })
+    //   console.log('💬 New chat message(s) received:', {
+    //     newMessages: newMessageCount,
+    //     totalMessages: currentMessageCount,
+    //     chatOpen: showChat
+    //   })
 
       if (showChat) {
         // Chat is open - auto-scroll to bottom
