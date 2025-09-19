@@ -86,7 +86,7 @@ class SocketManager {
   private maxReconnectAttempts = 5
   private isReconnecting = false
 
-  connect(apiUrl: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8800') {
+  connect(apiUrl: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://know-himanshu-api.vercel.app') {
     if (this.socket?.connected) {
       return this.socket
     }
