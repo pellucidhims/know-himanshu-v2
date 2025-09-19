@@ -260,13 +260,14 @@ export default function MultiplayerPullerGame() {
     const currentMessageCount = chatMessages.length
     const previousMessageCount = prevChatLengthRef.current
 
-    if (currentMessageCount > previousMessageCount && previousMessageCount > 0) {
+    if (currentMessageCount > previousMessageCount) {
       // New message(s) received
       const newMessageCount = currentMessageCount - previousMessageCount
     //   console.log('💬 New chat message(s) received in game:', {
     //     newMessages: newMessageCount,
     //     totalMessages: currentMessageCount,
-    //     chatOpen: showChat
+    //     chatOpen: showChat,
+    //     isFirstMessage: previousMessageCount === 0
     //   })
 
       if (showChat) {
