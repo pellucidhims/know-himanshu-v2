@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, Crown, Copy, Share2, MessageCircle, Play, Clock, Hash, Wifi, WifiOff, X } from 'lucide-react'
@@ -20,6 +20,12 @@ export default function GameRoomPage() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [isManualJoin, setIsManualJoin] = useState(false)
   const [hasTriedAutoJoin, setHasTriedAutoJoin] = useState(false)
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0)
+  const [lastReadMessageCount, setLastReadMessageCount] = useState(0)
+  
+  // Refs for chat functionality
+  const chatContainerRef = useRef<HTMLDivElement>(null)
+  const prevChatLengthRef = useRef(0)
 
   const {
     isConnected,
@@ -67,7 +73,7 @@ export default function GameRoomPage() {
     const storedRoomData = sessionStorage.getItem(`room_${roomId}`)
     console.log('Session storage raw data:', storedRoomData)
     
-    if (storedRoomData && !hasJoined && isConnected) {
+    if (storedRoomData && !hasJoined && isConnected && !hasTriedAutoJoin) {
       try {
         const { playerId, avatarName: storedAvatarName, isLeader } = JSON.parse(storedRoomData)
         console.log('Found stored room data:', { playerId, storedAvatarName, isLeader })
@@ -76,7 +82,7 @@ export default function GameRoomPage() {
         // If we have stored data but no current room, try to reconnect
         if (!currentRoom) {
           console.log('Attempting to reconnect using stored session data')
-          getRoomInfo(roomId)
+          getRoomInfo(roomId, playerId)
           setHasTriedAutoJoin(true)
           
           // Give a bit more time for the connection to establish
@@ -97,7 +103,7 @@ export default function GameRoomPage() {
     } else {
       console.log('Session data found but user already hasJoined')
     }
-  }, [roomId, currentRoom, isConnected, getRoomInfo, hasJoined])
+  }, [roomId, currentRoom, isConnected, getRoomInfo, hasJoined, hasTriedAutoJoin])
 
   // Reset room state if visiting a different room or if currentRoom doesn't match
   useEffect(() => {
@@ -153,7 +159,18 @@ export default function GameRoomPage() {
   useEffect(() => {
     if (isConnected && !currentRoom && !isLoading && roomId && hasJoined && !hasTriedAutoJoin) {
       console.log('User reconnecting, requesting room info for:', roomId)
-      getRoomInfo(roomId)
+      // Get stored player ID for reconnection
+      const storedRoomData = sessionStorage.getItem(`room_${roomId}`)
+      let storedPlayerId = null
+      if (storedRoomData) {
+        try {
+          const { playerId } = JSON.parse(storedRoomData)
+          storedPlayerId = playerId
+        } catch (error) {
+          console.error('Error parsing stored room data for reconnection:', error)
+        }
+      }
+      getRoomInfo(roomId, storedPlayerId)
       setHasTriedAutoJoin(true)
     }
   }, [isConnected, currentRoom, isLoading, roomId, hasJoined, hasTriedAutoJoin, getRoomInfo])
@@ -208,14 +225,71 @@ export default function GameRoomPage() {
     }
   }
 
+  // Auto-scroll chat to bottom
+  const scrollChatToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+    }
+  }
+
   // Handle chat message send
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
     if (chatMessage.trim()) {
       sendChatMessage(chatMessage.trim())
       setChatMessage('')
+      // Auto-scroll after sending message
+      setTimeout(scrollChatToBottom, 100)
     }
   }
+
+  // Handle chat open/close with notification clearing
+  const handleToggleChat = () => {
+    setShowChat(!showChat)
+    if (!showChat) {
+      // Opening chat - mark all messages as read
+      setUnreadMessageCount(0)
+      setLastReadMessageCount(chatMessages.length)
+      // Auto-scroll when opening
+      setTimeout(scrollChatToBottom, 100)
+    }
+  }
+
+  // Handle new chat messages - notifications and auto-scroll
+  useEffect(() => {
+    const currentMessageCount = chatMessages.length
+    const previousMessageCount = prevChatLengthRef.current
+
+    if (currentMessageCount > previousMessageCount && previousMessageCount > 0) {
+      // New message(s) received
+      const newMessageCount = currentMessageCount - previousMessageCount
+      console.log('💬 New chat message(s) received:', {
+        newMessages: newMessageCount,
+        totalMessages: currentMessageCount,
+        chatOpen: showChat
+      })
+
+      if (showChat) {
+        // Chat is open - auto-scroll to bottom
+        setTimeout(scrollChatToBottom, 100)
+        // Mark as read immediately
+        setLastReadMessageCount(currentMessageCount)
+      } else {
+        // Chat is closed - increment unread count
+        setUnreadMessageCount(prev => prev + newMessageCount)
+      }
+    }
+
+    // Update the ref for next comparison
+    prevChatLengthRef.current = currentMessageCount
+  }, [chatMessages.length, showChat])
+
+  // Auto-scroll when chat is opened and there are messages
+  useEffect(() => {
+    if (showChat && chatMessages.length > 0) {
+      setTimeout(scrollChatToBottom, 200)
+    }
+  }, [showChat, chatMessages.length])
 
   // Redirect to game page when game starts
   useEffect(() => {
@@ -562,18 +636,48 @@ export default function GameRoomPage() {
 
             {/* Chat */}
             <div className="bg-white/10 dark:bg-dark-elevated/30 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-dark-border/30 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900 dark:text-dark-text-primary flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  Chat
-                </h3>
-                <button
-                  onClick={() => setShowChat(!showChat)}
-                  className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  {showChat ? 'Hide' : 'Show'}
-                </button>
-              </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900 dark:text-dark-text-primary flex items-center gap-2">
+                    <div className="relative">
+                      <MessageCircle className="w-4 h-4" />
+                      {/* Notification indicator */}
+                      {unreadMessageCount > 0 && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                        >
+                          {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                        </motion.div>
+                      )}
+                    </div>
+                    Chat
+                    {unreadMessageCount > 0 && (
+                      <span className="text-xs text-red-500 font-normal">
+                        ({unreadMessageCount} new)
+                      </span>
+                    )}
+                  </h3>
+                  <button
+                    onClick={handleToggleChat}
+                    className={`text-xs px-3 py-1 rounded-md transition-all duration-200 ${
+                      unreadMessageCount > 0
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {showChat ? 'Hide' : 'Show'}
+                    {unreadMessageCount > 0 && !showChat && (
+                      <motion.span
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ repeat: Infinity, duration: 1.5 }}
+                        className="ml-1"
+                      >
+                        •
+                      </motion.span>
+                    )}
+                  </button>
+                </div>
 
               <AnimatePresence>
                 {showChat && (
@@ -583,20 +687,51 @@ export default function GameRoomPage() {
                     exit={{ height: 0, opacity: 0 }}
                     className="space-y-3"
                   >
-                    <div className="h-32 overflow-y-auto bg-gray-50 dark:bg-dark-surface rounded-lg p-2">
+                    <div 
+                      ref={chatContainerRef}
+                      className="h-32 overflow-y-auto bg-gray-50 dark:bg-dark-surface rounded-lg p-2 scroll-smooth"
+                    >
                       {chatMessages.length === 0 ? (
                         <p className="text-gray-500 text-xs text-center py-4">No messages yet</p>
                       ) : (
-                        chatMessages.map((message, index) => (
-                          <div key={index} className="text-xs mb-2">
-                            <span className="font-semibold text-primary-600 dark:text-primary-400">
-                              {message.avatarName}:
-                            </span>
-                            <span className="ml-1 text-gray-700 dark:text-gray-300">
-                              {message.message}
-                            </span>
-                          </div>
-                        ))
+                        <div className="space-y-2">
+                          {chatMessages.map((message, index) => {
+                            const isOwnMessage = message.playerId === currentPlayer?.playerId
+                            const messageTime = new Date(message.timestamp).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })
+                            
+                            return (
+                              <motion.div 
+                                key={index}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`text-xs p-2 rounded-lg ${
+                                  isOwnMessage 
+                                    ? 'bg-primary-100 dark:bg-primary-900/30 ml-4' 
+                                    : 'bg-white dark:bg-dark-elevated mr-4'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className={`font-semibold ${
+                                    isOwnMessage 
+                                      ? 'text-primary-700 dark:text-primary-300' 
+                                      : 'text-gray-700 dark:text-gray-300'
+                                  }`}>
+                                    {isOwnMessage ? 'You' : message.avatarName}
+                                  </span>
+                                  <span className="text-gray-400 text-xs">
+                                    {messageTime}
+                                  </span>
+                                </div>
+                                <p className="text-gray-700 dark:text-gray-300 break-words">
+                                  {message.message}
+                                </p>
+                              </motion.div>
+                            )
+                          })}
+                        </div>
                       )}
                     </div>
                     
@@ -606,16 +741,27 @@ export default function GameRoomPage() {
                         value={chatMessage}
                         onChange={(e) => setChatMessage(e.target.value)}
                         placeholder="Type a message..."
-                        className="flex-1 text-xs px-2 py-1 border border-gray-300 dark:border-dark-border rounded focus:ring-1 focus:ring-primary-500 dark:bg-dark-surface dark:text-dark-text-primary"
+                        maxLength={200}
+                        className="flex-1 text-xs px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-dark-surface dark:text-dark-text-primary transition-all duration-200"
+                        autoComplete="off"
                       />
-                      <button
+                      <motion.button
                         type="submit"
                         disabled={!chatMessage.trim()}
-                        className="text-xs px-2 py-1 bg-primary-500 text-white rounded disabled:opacity-50"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="text-xs px-3 py-2 bg-primary-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-600 transition-all duration-200 font-medium"
                       >
                         Send
-                      </button>
+                      </motion.button>
                     </form>
+                    
+                    {/* Message count indicator */}
+                    {chatMessage.length > 0 && (
+                      <div className="text-xs text-gray-400 text-right mt-1">
+                        {chatMessage.length}/200
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

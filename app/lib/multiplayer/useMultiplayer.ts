@@ -64,7 +64,6 @@ export function useMultiplayer(options: UseMultiplayerOptions = {}) {
       try {
         socketManager.connect(apiUrl)
         updateState({ isLoading: true })
-        console.log('Auto-connect initiated, waiting for connection...')
       } catch (error) {
         console.error('Auto-connect failed:', error)
         updateState({ 
