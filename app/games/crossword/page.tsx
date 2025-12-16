@@ -68,7 +68,7 @@ const loadPuzzleState = (): SavedPuzzleState | null => {
       !Array.isArray(parsed.userGrid) ||
       parsed.userGrid.length === 0
     ) {
-      console.warn('Invalid saved puzzle state, clearing...')
+    //   console.warn('Invalid saved puzzle state, clearing...')
       clearPuzzleState()
       return null
     }
@@ -97,22 +97,22 @@ const isValidSavedState = (
 ): boolean => {
   // Defensive check for missing dateGenerated
   if (!savedState.puzzleDate || !puzzleData.dateGenerated) {
-    console.warn('Missing puzzle date, clearing saved state...')
+    // console.warn('Missing puzzle date, clearing saved state...')
     return false
   }
   
   // Check date matches exactly (both come from server in YYYY-MM-DD format)
   if (savedState.puzzleDate !== puzzleData.dateGenerated) {
-    console.log(
-      'Puzzle date mismatch. Saved:', savedState.puzzleDate,
-      'Current:', puzzleData.dateGenerated
-    )
+    // console.log(
+    //   'Puzzle date mismatch. Saved:', savedState.puzzleDate,
+    //   'Current:', puzzleData.dateGenerated
+    // )
     return false
   }
   
   // Defensive check for grid existence
   if (!puzzleData.grid || !Array.isArray(puzzleData.grid) || puzzleData.grid.length === 0) {
-    console.warn('Invalid puzzle grid from server')
+    // console.warn('Invalid puzzle grid from server')
     return false
   }
   
@@ -124,7 +124,7 @@ const isValidSavedState = (
     savedState.userGrid.length !== expectedRows ||
     savedState.userGrid[0]?.length !== expectedCols
   ) {
-    console.warn('Saved grid dimensions do not match puzzle, clearing...')
+    // console.warn('Saved grid dimensions do not match puzzle, clearing...')
     return false
   }
   
@@ -134,14 +134,14 @@ const isValidSavedState = (
     savedState.gridCols !== undefined &&
     (savedState.gridRows !== expectedRows || savedState.gridCols !== expectedCols)
   ) {
-    console.warn('Stored grid dimensions do not match, clearing...')
+    // console.warn('Stored grid dimensions do not match, clearing...')
     return false
   }
   
   // Validate each row has correct number of columns
   for (const row of savedState.userGrid) {
     if (!Array.isArray(row) || row.length !== expectedCols) {
-      console.warn('Saved grid row structure invalid, clearing...')
+    //   console.warn('Saved grid row structure invalid, clearing...')
       return false
     }
   }
@@ -286,9 +286,38 @@ const CrosswordCell = ({
           if (el) cellRefs.current.set(cellKey, el)
         }}
         type="text"
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        inputMode="text"
+        pattern="[A-Za-z]"
+        maxLength={1}
+        value=""
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer touch-manipulation"
         onKeyDown={onKeyDown}
-        readOnly
+        onInput={(e) => {
+          // Handle input for mobile keyboards
+          const target = e.target as HTMLInputElement
+          const newValue = target.value.toUpperCase().replace(/[^A-Z]/g, '')
+          
+          // Clear the input immediately to allow next character
+          target.value = ''
+          
+          if (newValue.length > 0) {
+            // Trigger a synthetic key event to use the same logic
+            const syntheticEvent = {
+              key: newValue[0],
+              preventDefault: () => {},
+              stopPropagation: () => {},
+            } as React.KeyboardEvent
+            onKeyDown(syntheticEvent)
+          }
+        }}
+        onFocus={(e) => {
+          // Clear on focus for clean slate
+          e.target.value = ''
+        }}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="characters"
+        spellCheck={false}
         aria-label={`Cell ${number || ''}`}
       />
     </motion.div>
@@ -443,7 +472,7 @@ export default function CrosswordPage() {
       // Validate saved state matches today's puzzle completely
       if (savedState && isValidSavedState(savedState, data)) {
         // Restore saved state for today's puzzle
-        console.log('Restoring saved puzzle state for:', data.dateGenerated)
+        // console.log('Restoring saved puzzle state for:', data.dateGenerated)
         setUserGrid(savedState.userGrid)
         if (savedState.gameMode) {
           setGameMode(savedState.gameMode)
@@ -464,7 +493,7 @@ export default function CrosswordPage() {
       } else {
         // Invalid, different day, or no saved state - clear old data and start fresh
         if (savedState) {
-          console.log('Clearing old puzzle state. Saved date:', savedState.puzzleDate, 'Current date:', data.dateGenerated)
+        //   console.log('Clearing old puzzle state. Saved date:', savedState.puzzleDate, 'Current date:', data.dateGenerated)
           clearPuzzleState()
         }
         
@@ -484,7 +513,7 @@ export default function CrosswordPage() {
         setUserGrid(emptyGrid)
       }
     } catch (err) {
-      console.error('Failed to load puzzle:', err)
+    //   console.error('Failed to load puzzle:', err)
       setError(err instanceof Error ? err.message : 'Failed to load puzzle')
     } finally {
       setIsLoading(false)
