@@ -1,8 +1,24 @@
 import axios from 'axios'
 
+// Get API base URL with proper protocol handling
+const getApiBaseUrl = (): string => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+  
+  if (!envUrl) {
+    return 'https://know-himanshu-api.vercel.app'
+  }
+  
+  // Ensure URL has protocol
+  if (!envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {
+    return `http://${envUrl}`
+  }
+  
+  return envUrl
+}
+
 // API base configuration
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://know-himanshu-api.vercel.app',
+  baseURL: getApiBaseUrl(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
