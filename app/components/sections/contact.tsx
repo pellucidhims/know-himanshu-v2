@@ -6,6 +6,42 @@ import { Mail, Phone, MapPin, Github, Linkedin, Twitter, Instagram, Send } from 
 import { fadeIn, staggerContainer, textVariant } from '../../lib/utils'
 import { useToast } from '../ui/toast'
 
+// Email Validation Service - Server-side API (secure, rate-limited)
+const validateEmailWithService = async (email: string): Promise<{ valid: boolean; reason?: string }> => {
+  try {
+    // Use the server-side email validation API (API key is stored securely on server)
+    const { api } = await import('../../lib/api')
+    const response = await api.post('/email-validation/validate', { email })
+    
+    if (response.data.success) {
+      return {
+        valid: response.data.data.valid,
+        reason: response.data.data.reason,
+      }
+    }
+    
+    // API returned error
+    return { valid: false, reason: response.data.error || 'Email validation failed' }
+  } catch (error: unknown) {
+    // Handle rate limiting
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { status?: number; data?: { error?: string } } }
+      if (axiosError.response?.status === 429) {
+        return { valid: false, reason: 'Too many requests. Please wait a moment and try again.' }
+      }
+    }
+    
+    // Fallback: Basic client-side validation if API is unavailable
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return { valid: false, reason: 'Invalid email format' }
+    }
+    
+    // Allow submission if API is down but format is valid
+    return { valid: true }
+  }
+}
+
 const contactInfo = [
   {
     icon: <Mail className="h-6 w-6" />,
@@ -69,7 +105,16 @@ export default function Contact() {
     setIsSubmitting(true)
     
     try {
-      // Use API integration - fallback to simulation if API fails
+      // Step 1: Validate email before submitting
+      const emailValidation = await validateEmailWithService(formData.email)
+      
+      if (!emailValidation.valid) {
+        showToast(emailValidation.reason || 'Please enter a valid email address', 'error')
+        setIsSubmitting(false)
+        return
+      }
+      
+      // Step 2: Submit the form
       try {
         const { submitContactForm } = await import('../../lib/api')
         await submitContactForm(formData)
