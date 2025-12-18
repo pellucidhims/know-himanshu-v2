@@ -1,3 +1,27 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap location
+Sitemap: https://knowhimanshu.in/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Googlebot specific rules
+User-agent: Googlebot
+Allow: /
+Allow: /games
+Allow: /games/crossword
+Allow: /games/tic-tac-toe
+Allow: /games/find-pairs
+Allow: /games/puller
+
+# Bingbot specific rules
+User-agent: Bingbot
+Allow: /
+Allow: /games
+
+# Block unnecessary paths (if any)
+Disallow: /api/
+Disallow: /_next/static/
