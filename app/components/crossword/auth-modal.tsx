@@ -362,25 +362,25 @@ interface UserInfoBadgeProps {
 }
 
 export const UserInfoBadge = ({ user, onLogout, onClick }: UserInfoBadgeProps) => (
-  <div className="flex items-center gap-3 p-2 bg-white/10 dark:bg-dark-elevated/30 rounded-xl">
+  <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white/50 dark:bg-dark-elevated/50 rounded-xl border border-gray-200 dark:border-dark-border">
     <CrosswordAvatar
-      avatarId={user.avatar}
-      size={40}
+      avatarId={user?.avatar || 'avatar-1'}
+      size={36}
       onClick={onClick}
-      className="cursor-pointer"
+      className="cursor-pointer flex-shrink-0"
     />
     <div className="flex-1 min-w-0">
-      <p className="font-medium text-gray-900 dark:text-white truncate">
-        {user.username}
+      <p className="font-medium text-gray-900 dark:text-white truncate text-sm sm:text-base">
+        {user?.username || 'User'}
       </p>
-      <div className="flex items-center gap-1 text-sm text-orange-500">
-        <Flame className="w-4 h-4" />
-        <span>{user.stats.currentStreak} day streak</span>
+      <div className="flex items-center gap-1 text-xs sm:text-sm text-orange-500">
+        <Flame className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span>{user?.stats?.currentStreak ?? 0} day streak</span>
       </div>
     </div>
     <button
       onClick={onLogout}
-      className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+      className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors font-medium bg-gray-100 dark:bg-dark-bg rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
     >
       Logout
     </button>

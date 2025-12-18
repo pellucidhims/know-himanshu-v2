@@ -547,9 +547,15 @@ export default function CrosswordPage() {
           const verifiedUser = await verifyToken()
           if (verifiedUser) {
             setUser(verifiedUser)
-            // If saved state has streak mode and user is verified, ensure we're in streak mode
+            // Check if saved state has streak mode
             const savedState = loadPuzzleState()
             if (savedState?.gameMode === 'streak') {
+              setGameMode('streak')
+              setIsTimerRunning(true)
+            } else {
+              // Even if localStorage is cleared (new day/new window),
+              // auto-start streak mode for authenticated users
+              // This ensures logged-in users always see their streak data
               setGameMode('streak')
               setIsTimerRunning(true)
             }
@@ -620,12 +626,22 @@ export default function CrosswordPage() {
           clearPuzzleState()
         }
         
-        // Reset all game state
-        setGameMode(null)
+        // Reset game state, but respect authenticated users
+        // If user is authenticated, they should be in streak mode
+        const isUserAuthenticated = !!(isAuthenticated() && getStoredUser())
+        if (isUserAuthenticated) {
+          // Authenticated user - set to streak mode and start timer
+          setGameMode('streak')
+        } else {
+          // Non-authenticated user - show mode selection
+          setGameMode(null)
+        }
+        
         setTimer(0)
         setSubmissions(0)
         setIsComplete(false)
-        setIsTimerRunning(false)
+        // Start timer for authenticated users, stop for non-authenticated
+        setIsTimerRunning(isUserAuthenticated)
         setVerificationResults(new Map())
         setSelectedCell(null)
         
