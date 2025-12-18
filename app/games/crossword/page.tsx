@@ -13,10 +13,14 @@ import {
   Lightbulb,
   Calendar,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Flame,
+  LogOut
 } from 'lucide-react'
 import { fadeIn, staggerContainer, zoomIn } from '../../lib/utils'
 import GamesNavbar from '../../components/navigation/games-navbar'
+import Link from 'next/link'
+import { Gamepad2 } from 'lucide-react'
 import { 
   fetchDailyPuzzle, 
   CrosswordPuzzleData, 
@@ -25,14 +29,34 @@ import {
 } from '../../lib/crossword/api'
 import { verifyAllAnswers } from '../../lib/crossword/hash-utils'
 
+// Streak mode components
+import { AuthModal, UserInfoBadge } from '../../components/crossword/auth-modal'
+import { Leaderboard } from '../../components/crossword/leaderboard'
+import { StreakInfo, StreakBadge, StreakCompletion } from '../../components/crossword/streak-info'
+import { CrosswordAvatar } from '../../components/crossword/avatars'
+import {
+  CrosswordUser,
+  isAuthenticated,
+  getStoredUser,
+  verifyToken,
+  logout as authLogout,
+  saveProgress,
+  completePuzzle,
+  recordAttempt,
+  loadGame,
+} from '../../lib/crossword/streak-api'
+
 // LocalStorage key for crossword puzzle state
 const STORAGE_KEY = 'crossword_puzzle_state'
+
+// Game mode type including streak mode (casual mode removed - always timed)
+type GameMode = 'timer' | 'streak' | null
 
 // Saved puzzle state interface
 interface SavedPuzzleState {
   puzzleDate: string
   userGrid: string[][]
-  gameMode: 'timer' | 'casual' | null
+  gameMode: GameMode
   timer: number
   submissions: number
   isComplete: boolean
@@ -358,49 +382,94 @@ const ClueItem = ({ number, clue, isActive, direction, onClick }: ClueProps) => 
   </motion.div>
 )
 
-// Game Mode Selector
+// Game Mode Selector with Streak Mode
 const GameModeSelector = ({ 
-  onModeSelect 
+  onModeSelect,
+  user,
+  onStreakClick,
 }: { 
-  onModeSelect: (mode: 'timer' | 'casual') => void 
+  onModeSelect: (mode: 'timer') => void
+  user: CrosswordUser | null
+  onStreakClick: () => void
 }) => {
   return (
     <motion.div
       variants={fadeIn('up', 0.3)}
-      className="bg-white/10 dark:bg-dark-elevated/30 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-dark-border/30 p-6 max-w-2xl mx-auto"
+      className="bg-white/10 dark:bg-dark-elevated/30 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-dark-border/30 p-6 max-w-3xl mx-auto"
     >
       <h3 className="text-xl font-bold text-gray-900 dark:text-dark-text-primary mb-6 text-center flex items-center justify-center gap-2">
         <Lightbulb className="w-6 h-6 text-yellow-500" />
         Choose Your Challenge Mode
       </h3>
-      <div className="grid md:grid-cols-2 gap-6">
-        <motion.button
-          whileHover={{ scale: 1.03, y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onModeSelect('timer')}
-          className="group relative p-6 rounded-2xl border-2 border-primary-300 dark:border-primary-600 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 transition-all duration-300 flex flex-col items-center gap-3"
-        >
-          <Timer className="w-12 h-12 text-primary-500" />
+      
+      {/* Streak Mode - Featured */}
+      <motion.button
+        whileHover={{ scale: 1.02, y: -2 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={onStreakClick}
+        className="w-full mb-6 p-5 rounded-2xl border-2 border-orange-400 dark:border-orange-600 bg-gradient-to-r from-orange-50 via-amber-50 to-red-50 dark:from-orange-900/20 dark:via-amber-900/20 dark:to-red-900/20 transition-all duration-300 flex items-center gap-4"
+      >
+        <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-lg">
+          <Flame className="w-8 h-8 text-white" />
+        </div>
+        <div className="flex-1 text-left">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg text-gray-900 dark:text-dark-text-primary">Streak Mode</span>
+            {user && (
+              <span className="px-2 py-0.5 bg-orange-500 text-white text-xs rounded-full">
+                {user.stats.currentStreak} day streak
+              </span>
+            )}
+          </div>
+          <span className="text-sm text-gray-600 dark:text-dark-text-secondary">
+            {user ? 'Continue your daily streak!' : 'Login to track your progress across days'}
+          </span>
+        </div>
+        {user ? (
+          <CrosswordAvatar avatarId={user.avatar} size={48} />
+        ) : (
+          <div className="px-4 py-2 bg-orange-500 text-white rounded-lg font-semibold text-sm">
+            Login
+          </div>
+        )}
+      </motion.button>
+      
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="px-4 bg-white/50 dark:bg-dark-elevated/50 text-sm text-gray-500">or play without login</span>
+        </div>
+      </div>
+      
+      {/* Timed Challenge - Only option for non-login */}
+      <motion.button
+        whileHover={{ scale: 1.02, y: -2 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => onModeSelect('timer')}
+        className="w-full p-5 rounded-2xl border-2 border-primary-300 dark:border-primary-600 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 transition-all duration-300 flex items-center gap-4"
+      >
+        <div className="p-3 bg-gradient-to-br from-primary-500 to-teal-600 rounded-xl shadow-lg">
+          <Timer className="w-8 h-8 text-white" />
+        </div>
+        <div className="flex-1 text-left">
           <span className="font-bold text-lg text-gray-900 dark:text-dark-text-primary">Timed Challenge</span>
-          <span className="text-sm text-center text-gray-600 dark:text-dark-text-secondary">
-            ⏱️ Race against time!<br />
-            <span className="text-xs">Timer + submission count tracked</span>
-          </span>
-        </motion.button>
-        
-        <motion.button
-          whileHover={{ scale: 1.03, y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onModeSelect('casual')}
-          className="group relative p-6 rounded-2xl border-2 border-secondary-300 dark:border-secondary-600 bg-gradient-to-br from-secondary-50 to-secondary-100 dark:from-secondary-900/20 dark:to-secondary-800/20 transition-all duration-300 flex flex-col items-center gap-3"
+          <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
+            ⏱️ Race against time! You can switch to Streak Mode anytime.
+          </p>
+        </div>
+      </motion.button>
+      
+      {/* Games Lobby Link */}
+      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border/50">
+        <Link
+          href="/games"
+          className="flex items-center justify-center gap-2 w-full py-3 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
-          <Calendar className="w-12 h-12 text-secondary-500" />
-          <span className="font-bold text-lg text-gray-900 dark:text-dark-text-primary">Casual Play</span>
-          <span className="text-sm text-center text-gray-600 dark:text-dark-text-secondary">
-            🧩 Take your time<br />
-            <span className="text-xs">No pressure, just fun!</span>
-          </span>
-        </motion.button>
+          <Gamepad2 className="w-5 h-5" />
+          <span>Browse Other Games</span>
+        </Link>
       </div>
     </motion.div>
   )
@@ -435,7 +504,7 @@ const ErrorDisplay = ({ error, onRetry }: { error: string; onRetry: () => void }
 // Main Crossword Game Component
 export default function CrosswordPage() {
   // Game state
-  const [gameMode, setGameMode] = useState<'timer' | 'casual' | null>(null)
+  const [gameMode, setGameMode] = useState<GameMode>(null)
   const [puzzleData, setPuzzleData] = useState<CrosswordPuzzleData | null>(null)
   const [userGrid, setUserGrid] = useState<string[][]>([])
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null)
@@ -452,10 +521,49 @@ export default function CrosswordPage() {
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const [submissions, setSubmissions] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const [showWinModal, setShowWinModal] = useState(false) // Separate state for modal visibility
   const [showConfetti, setShowConfetti] = useState(false)
+  
+  // Streak mode state
+  const [user, setUser] = useState<CrosswordUser | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showStreakCompletion, setShowStreakCompletion] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false) // Reset confirmation modal
   
   // Refs for cell inputs
   const cellRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+  
+  // Track auth check completion
+  const [isAuthChecked, setIsAuthChecked] = useState(false)
+  
+  // Check for existing auth on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (isAuthenticated()) {
+        const storedUser = getStoredUser()
+        if (storedUser) {
+          setUser(storedUser)
+          // Verify token is still valid
+          const verifiedUser = await verifyToken()
+          if (verifiedUser) {
+            setUser(verifiedUser)
+            // If saved state has streak mode and user is verified, ensure we're in streak mode
+            const savedState = loadPuzzleState()
+            if (savedState?.gameMode === 'streak') {
+              setGameMode('streak')
+              setIsTimerRunning(true)
+            }
+          } else {
+            setUser(null)
+            // If user was in streak mode but token is invalid, switch to timer mode
+            setGameMode(prev => prev === 'streak' ? 'timer' : prev)
+          }
+        }
+      }
+      setIsAuthChecked(true)
+    }
+    checkAuth()
+  }, [])
   
   // Fetch puzzle from API
   const loadPuzzle = useCallback(async () => {
@@ -475,8 +583,19 @@ export default function CrosswordPage() {
         // console.log('Restoring saved puzzle state for:', data.dateGenerated)
         setUserGrid(savedState.userGrid)
         if (savedState.gameMode) {
-          setGameMode(savedState.gameMode)
-          if (savedState.gameMode === 'timer') {
+          // Handle legacy 'casual' mode - treat as 'timer'
+          const savedMode = savedState.gameMode as string
+          let normalizedMode: GameMode = savedMode === 'casual' ? 'timer' : (savedMode as GameMode)
+          
+          // If saved mode is 'streak' but user is not authenticated, fallback to 'timer'
+          // This prevents the undefined user error on reload
+          // Check both token and stored user to be safe
+          if (normalizedMode === 'streak' && (!isAuthenticated() || !getStoredUser())) {
+            normalizedMode = 'timer'
+          }
+          
+          setGameMode(normalizedMode)
+          if (normalizedMode === 'timer' || normalizedMode === 'streak') {
             setTimer(savedState.timer || 0)
             setSubmissions(savedState.submissions || 0)
             // Don't auto-start timer if puzzle was completed
@@ -485,6 +604,10 @@ export default function CrosswordPage() {
             }
           }
           setIsComplete(savedState.isComplete || false)
+          // Show win modal if puzzle was already completed
+          if (savedState.isComplete) {
+            setShowWinModal(true)
+          }
         }
         // Restore verification results if available
         if (savedState.verificationResults && Array.isArray(savedState.verificationResults)) {
@@ -567,12 +690,154 @@ export default function CrosswordPage() {
   }
   
   // Start game with mode
-  const handleModeSelect = (mode: 'timer' | 'casual') => {
+  const handleModeSelect = (mode: 'timer') => {
     setGameMode(mode)
-    if (mode === 'timer') {
-      setIsTimerRunning(true)
+    setIsTimerRunning(true)
+  }
+  
+  // Handle streak mode click
+  const handleStreakClick = async () => {
+    if (!user) {
+      // Show auth modal if not logged in
+      setShowAuthModal(true)
+    } else {
+      // Start streak mode - pass user since state is available
+      startStreakMode(false, user)
     }
   }
+  
+  // Start streak mode after authentication
+  // preserveCurrentState: if true, keep the current timer and user input (when switching from timed mode)
+  // authenticatedUser: optionally pass the user directly (for cases where state hasn't updated yet)
+  const startStreakMode = async (preserveCurrentState: boolean = false, authenticatedUser?: CrosswordUser) => {
+    const activeUser = authenticatedUser || user
+    if (!activeUser || !puzzleData) {
+      console.warn('startStreakMode: Missing user or puzzleData', { hasUser: !!activeUser, hasPuzzle: !!puzzleData })
+      return
+    }
+    
+    // Store current state before switching
+    const wasPlaying = gameMode === 'timer'
+    
+    // Set game mode immediately (before async operations)
+    setGameMode('streak')
+    setIsTimerRunning(true)
+    
+    // Try to load saved game from server (but don't block on it)
+    try {
+      const savedGame = await loadGame(puzzleData.dateGenerated)
+      if (savedGame?.completed) {
+        // Already completed today on server - ALWAYS use server data
+        // This takes priority over any local progress since the puzzle was already solved
+        setIsComplete(true)
+        setIsTimerRunning(false)
+        setShowWinModal(true) // Show win modal for completed puzzle
+        setShowStreakCompletion(true)
+        
+        // Restore the completed grid state from server
+        if (savedGame.gridState && savedGame.gridState.length > 0) {
+          setUserGrid(savedGame.gridState)
+        }
+        // For completed puzzles, use timeToComplete (final time), not timerState (progress time)
+        const completedTime = savedGame.timeToComplete || savedGame.timerState || 0
+        setTimer(completedTime)
+        setSubmissions(savedGame.attempts || 0)
+        
+        // Mark all cells as correct (since puzzle was completed)
+        const newResults = new Map<string, boolean>()
+        puzzleData.wordHashes.forEach(wh => {
+          newResults.set(`${wh.number}-${wh.direction}`, true)
+        })
+        setVerificationResults(newResults)
+        
+        // Sync localStorage with server state
+        savePuzzleState({
+          puzzleDate: puzzleData.dateGenerated,
+          userGrid: savedGame.gridState || [],
+          gameMode: 'streak',
+          timer: completedTime,
+          submissions: savedGame.attempts || 0,
+          isComplete: true,
+          gridRows: puzzleData.grid.length,
+          gridCols: puzzleData.grid[0]?.length || 0,
+          verificationResults: Array.from(newResults.entries()),
+        })
+      } else if (preserveCurrentState && wasPlaying) {
+        // User was playing timed challenge - preserve their progress
+        // Keep current grid, timer and submissions (already set)
+        // No need to override from server since user has local progress
+      } else if (savedGame && !savedGame.completed) {
+        // Restore saved state from server (fresh login, no local progress)
+        if (savedGame.gridState && savedGame.gridState.length > 0) {
+          setUserGrid(savedGame.gridState)
+        }
+        setTimer(savedGame.timerState || 0)
+        setSubmissions(savedGame.attempts || 0)
+      }
+      // If no saved game and not preserving, start fresh (already initialized)
+    } catch (err) {
+      // Continue with current state if loading fails - streak mode is already set
+      console.error('Failed to load saved game:', err)
+    }
+  }
+  
+  // Handle successful authentication
+  const handleAuthSuccess = (newUser: CrosswordUser) => {
+    setUser(newUser)
+    setShowAuthModal(false)
+    // Auto-start streak mode after login
+    // Preserve current state if user was already playing timed challenge
+    const wasPlayingTimed = gameMode === 'timer'
+    // Pass the user directly since state update is async
+    startStreakMode(wasPlayingTimed, newUser)
+  }
+  
+  // Handle logout
+  const handleLogout = () => {
+    authLogout()
+    setUser(null)
+    setGameMode(null)
+    setShowStreakCompletion(false)
+    
+    // Clear localStorage to prevent data leakage between users
+    clearPuzzleState()
+    
+    // Reset game state to fresh
+    if (puzzleData) {
+      setUserGrid(puzzleData.grid.map(row => row.map(cell => cell.isBlocked ? '' : '')))
+    }
+    setTimer(0)
+    setSubmissions(0)
+    setIsComplete(false)
+    setShowWinModal(false)
+    setVerificationResults(new Map())
+    setSelectedCell(null)
+    setIsTimerRunning(false)
+  }
+  
+  // Save progress to server in streak mode
+  const saveStreakProgress = useCallback(async () => {
+    if (gameMode !== 'streak' || !user || !puzzleData || isComplete) return
+    
+    try {
+      await saveProgress(
+        puzzleData.dateGenerated,
+        userGrid,
+        timer,
+        submissions
+      )
+    } catch (err) {
+      console.error('Failed to save progress:', err)
+    }
+  }, [gameMode, user, puzzleData, userGrid, timer, submissions, isComplete])
+  
+  // Auto-save progress every 30 seconds in streak mode
+  useEffect(() => {
+    if (gameMode !== 'streak' || !user) return
+    
+    const interval = setInterval(saveStreakProgress, 30000)
+    return () => clearInterval(interval)
+  }, [gameMode, user, saveStreakProgress])
   
   // Find word hash at cell
   const findWordAtCell = useCallback((row: number, col: number, dir: 'across' | 'down'): WordHash | null => {
@@ -824,7 +1089,17 @@ export default function CrosswordPage() {
   const handleSubmit = async () => {
     if (!puzzleData) return
     
-    setSubmissions(prev => prev + 1)
+    const newSubmissions = submissions + 1
+    setSubmissions(newSubmissions)
+    
+    // Record attempt in streak mode
+    if (gameMode === 'streak' && user) {
+      try {
+        await recordAttempt(puzzleData.dateGenerated)
+      } catch (err) {
+        console.error('Failed to record attempt:', err)
+      }
+    }
     
     // Collect user answers
     const userAnswers = puzzleData.wordHashes.map(wordHash => {
@@ -855,29 +1130,55 @@ export default function CrosswordPage() {
     if (allCorrect) {
       setIsComplete(true)
       setIsTimerRunning(false)
+      setShowWinModal(true) // Show win modal
       setShowConfetti(true)
       setTimeout(() => setShowConfetti(false), 4000)
+      
+      // Complete puzzle in streak mode
+      if (gameMode === 'streak' && user) {
+        try {
+          const result = await completePuzzle(
+            puzzleData.dateGenerated,
+            newSubmissions,
+            timer,
+            userGrid  // Include the final grid state
+          )
+          // Update user with new stats
+          setUser(prev => prev ? { ...prev, stats: result.stats } : null)
+          setShowStreakCompletion(true)
+        } catch (err) {
+          console.error('Failed to complete puzzle:', err)
+        }
+      }
     }
   }
   
   // Reset game
-  const handleReset = () => {
+  // Show reset confirmation modal
+  const handleResetClick = () => {
+    if (!puzzleData || isComplete) return
+    setShowResetConfirm(true)
+  }
+  
+  // Confirm reset - only clears user input, timer continues
+  const handleResetConfirm = () => {
     if (!puzzleData) return
     
-    // Clear user input
+    // Clear user input only - timer and submissions continue
     setUserGrid(puzzleData.grid.map(row => row.map(cell => cell.isBlocked ? '' : '')))
     setVerificationResults(new Map())
     setSelectedCell(null)
-    setIsComplete(false)
     
-    if (gameMode === 'timer') {
-      setTimer(0)
-      setSubmissions(0)
-      setIsTimerRunning(true)
-    }
+    // Close confirmation modal
+    setShowResetConfirm(false)
     
-    // Clear saved state from localStorage (will be re-saved with empty grid)
-    clearPuzzleState()
+    // Note: Timer and submissions are NOT reset - they continue as is
+    // localStorage will be updated automatically by the save effect
+  }
+  
+  // Cancel reset
+  const handleResetCancel = () => {
+    setShowResetConfirm(false)
   }
   
   // Get cell verification status
@@ -1013,8 +1314,40 @@ export default function CrosswordPage() {
             </p>
           </motion.div>
           
+          {/* User Info (if logged in) */}
+          {user && (
+            <motion.div
+              variants={fadeIn('up', 0.25)}
+              className="max-w-3xl mx-auto mb-6"
+            >
+              <UserInfoBadge 
+                user={user} 
+                onLogout={handleLogout}
+              />
+            </motion.div>
+          )}
+          
           {/* Mode Selection */}
-          <GameModeSelector onModeSelect={handleModeSelect} />
+          <GameModeSelector 
+            onModeSelect={handleModeSelect}
+            user={user}
+            onStreakClick={handleStreakClick}
+          />
+          
+          {/* Leaderboard */}
+          <motion.div
+            variants={fadeIn('up', 0.4)}
+            className="mt-8 max-w-3xl mx-auto"
+          >
+            <Leaderboard compact />
+          </motion.div>
+          
+          {/* Auth Modal */}
+          <AuthModal 
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onSuccess={handleAuthSuccess}
+          />
           
           {/* How to Play */}
           <motion.div
@@ -1085,12 +1418,50 @@ export default function CrosswordPage() {
           </p>
         </motion.div>
         
+        {/* Streak Mode User Info */}
+        {gameMode === 'streak' && user && (
+          <motion.div
+            variants={fadeIn('up', 0.05)}
+            className="mb-4"
+          >
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800/50">
+              <div className="flex items-center gap-3">
+                <CrosswordAvatar avatarId={user.avatar} size={40} />
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">{user?.username}</p>
+                  <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-sm">
+                    <Flame className="w-4 h-4" />
+                    <span>{user?.stats?.currentStreak ?? 0} day streak</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Games Lobby Button */}
+                <Link
+                  href="/games"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all"
+                >
+                  <Gamepad2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Games Lobby</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        
         {/* Stats Bar */}
         <motion.div
           variants={fadeIn('up', 0.1)}
           className="flex flex-wrap items-center justify-center gap-4 mb-4 sm:mb-6"
         >
-          {gameMode === 'timer' && (
+          {(gameMode === 'timer' || gameMode === 'streak') && (
             <>
               <div className="flex items-center gap-2 px-4 py-2 bg-white/50 dark:bg-dark-elevated/50 rounded-xl border border-gray-200 dark:border-dark-border">
                 <Clock className={`w-5 h-5 ${isComplete ? 'text-green-500' : 'text-primary-500'}`} />
@@ -1105,6 +1476,43 @@ export default function CrosswordPage() {
                   {submissions} {submissions === 1 ? 'attempt' : 'attempts'}
                 </span>
               </div>
+              
+              {gameMode === 'streak' && user?.stats && (
+                <StreakBadge currentStreak={user.stats.currentStreak ?? 0} />
+              )}
+              
+              {/* Completed badge when puzzle is solved */}
+              {isComplete && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg">
+                  <Trophy className="w-5 h-5" />
+                  <span>Completed!</span>
+                </div>
+              )}
+              
+              {/* Enter Streak Mode button during timed play */}
+              {gameMode === 'timer' && !isComplete && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+                >
+                  <Flame className="w-4 h-4" />
+                  <span className="hidden sm:inline">Enter Streak Mode</span>
+                  <span className="sm:hidden">Streak</span>
+                </motion.button>
+              )}
+              
+              {/* Games Lobby button for timer mode */}
+              {gameMode === 'timer' && (
+                <Link
+                  href="/games"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-dark-bg text-gray-700 dark:text-gray-300 rounded-xl font-medium text-sm hover:bg-gray-200 dark:hover:bg-dark-surface transition-all border border-gray-200 dark:border-dark-border"
+                >
+                  <Gamepad2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Games</span>
+                </Link>
+              )}
             </>
           )}
           
@@ -1210,10 +1618,15 @@ export default function CrosswordPage() {
               </motion.button>
               
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleReset}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300"
+                whileHover={{ scale: isComplete ? 1 : 1.02 }}
+                whileTap={{ scale: isComplete ? 1 : 0.98 }}
+                onClick={handleResetClick}
+                disabled={isComplete}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  isComplete
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
               >
                 <RotateCcw className="w-5 h-5" />
                 Reset
@@ -1245,9 +1658,93 @@ export default function CrosswordPage() {
           </motion.div>
         </div>
         
+        {/* Leaderboard for logged-in users */}
+        {gameMode === 'streak' && user && (
+          <motion.div
+            variants={fadeIn('up', 0.4)}
+            className="mt-6"
+          >
+            <Leaderboard className="max-w-2xl mx-auto" />
+          </motion.div>
+        )}
+        
+        {/* Public Leaderboard for timer mode (collapsed by default) */}
+        {gameMode === 'timer' && (
+          <motion.div
+            variants={fadeIn('up', 0.4)}
+            className="mt-6"
+          >
+            <Leaderboard className="max-w-2xl mx-auto" compact={true} />
+          </motion.div>
+        )}
+        
+        {/* Auth Modal (for switching to streak mode mid-game) */}
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={handleAuthSuccess}
+        />
+        
+        {/* Reset Confirmation Modal */}
+        <AnimatePresence>
+          {showResetConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={handleResetCancel}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white dark:bg-dark-elevated rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-dark-border max-w-sm w-full"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
+                    <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Clear Input?
+                  </h3>
+                </div>
+                
+                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                  This will clear all your entered letters.
+                </p>
+                <p className="text-sm text-amber-600 dark:text-amber-400 mb-6 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Timer and attempts will continue.
+                </p>
+                
+                <div className="flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleResetCancel}
+                    className="flex-1 py-2.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleResetConfirm}
+                    className="flex-1 py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+                  >
+                    Clear Input
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
         {/* Win Modal */}
         <AnimatePresence>
-          {isComplete && (
+          {showWinModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1273,10 +1770,10 @@ export default function CrosswordPage() {
                   Congratulations!
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  You solved today's crossword!
+                  You solved today&apos;s crossword!
                 </p>
                 
-                {gameMode === 'timer' && (
+                {(gameMode === 'timer' || gameMode === 'streak') && (
                   <div className="mb-6 p-4 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl space-y-3">
                     <div className="flex items-center justify-center gap-3">
                       <Clock className="w-5 h-5 text-emerald-600" />
@@ -1290,13 +1787,21 @@ export default function CrosswordPage() {
                         {submissions} {submissions === 1 ? 'attempt' : 'attempts'}
                       </span>
                     </div>
+                    {gameMode === 'streak' && user?.stats && (
+                      <div className="flex items-center justify-center gap-3 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                        <Flame className="w-5 h-5 text-orange-500" />
+                        <span className="font-bold text-orange-600 dark:text-orange-400">
+                          {user.stats.currentStreak ?? 0} day streak!
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
                 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsComplete(false)}
+                  onClick={() => setShowWinModal(false)}
                   className="w-full py-3 px-6 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300"
                 >
                   View Puzzle
