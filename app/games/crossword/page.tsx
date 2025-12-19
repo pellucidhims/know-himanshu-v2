@@ -595,7 +595,7 @@ export default function CrosswordPage() {
           
           // If saved mode is 'streak' but user is not authenticated, fallback to 'timer'
           // This prevents the undefined user error on reload
-          // Check both token and stored user to be safe
+          // Check localStorage which is synchronous and doesn't have stale closure issues
           if (normalizedMode === 'streak' && (!isAuthenticated() || !getStoredUser())) {
             normalizedMode = 'timer'
           }
@@ -659,10 +659,13 @@ export default function CrosswordPage() {
     }
   }, [])
   
-  // Initialize puzzle on mount
+  // Initialize puzzle after auth check completes
+  // This ensures user state is available when deciding game mode
   useEffect(() => {
-    loadPuzzle()
-  }, [loadPuzzle])
+    if (isAuthChecked) {
+      loadPuzzle()
+    }
+  }, [isAuthChecked, loadPuzzle])
   
   // Timer effect
   useEffect(() => {
