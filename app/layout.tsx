@@ -68,6 +68,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
+        {/* Google AdSense */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5049716028544094"
+          crossOrigin="anonymous"
+        />
+        
         {/* Preload Friends character images for instant display */}
         <link rel="preload" href="/friends-characters/ross_geller.png" as="image" type="image/png" />
         <link rel="preload" href="/friends-characters/rachel_green.png" as="image" type="image/png" />
