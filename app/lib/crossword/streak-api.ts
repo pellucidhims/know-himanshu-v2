@@ -248,6 +248,77 @@ export const updateAvatar = async (avatar: string): Promise<string> => {
   throw new Error(response.data.error || 'Failed to update avatar')
 }
 
+export const checkUsernameAvailability = async (username: string): Promise<{ available: boolean; message: string }> => {
+  const token = getAuthToken()
+  if (!token) throw new Error('Not authenticated')
+  
+  try {
+    const response = await api.get(`/crossword-auth/check-username/${encodeURIComponent(username)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    
+    if (response.data.success) {
+      return response.data.data
+    }
+    
+    return { available: false, message: response.data.error || 'Failed to check username' }
+  } catch (error) {
+    const message = getErrorMessage(error, 'Failed to check username availability')
+    return { available: false, message }
+  }
+}
+
+export const updateUsername = async (username: string): Promise<{ username: string; message: string }> => {
+  const token = getAuthToken()
+  if (!token) throw new Error('Not authenticated')
+  
+  try {
+    const response = await api.patch('/crossword-auth/username', { username }, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    
+    if (response.data.success) {
+      // Update stored user
+      const user = getStoredUser()
+      if (user) {
+        user.username = response.data.data.username
+        localStorage.setItem(USER_KEY, JSON.stringify(user))
+      }
+      return response.data.data
+    }
+    
+    throw new Error(response.data.error || 'Failed to update username')
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update username'))
+  }
+}
+
+export const updateProfile = async (data: { username?: string; avatar?: string }): Promise<{ username: string; avatar: string; message: string }> => {
+  const token = getAuthToken()
+  if (!token) throw new Error('Not authenticated')
+  
+  try {
+    const response = await api.patch('/crossword-auth/profile', data, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    
+    if (response.data.success) {
+      // Update stored user
+      const user = getStoredUser()
+      if (user) {
+        if (response.data.data.username) user.username = response.data.data.username
+        if (response.data.data.avatar) user.avatar = response.data.data.avatar
+        localStorage.setItem(USER_KEY, JSON.stringify(user))
+      }
+      return response.data.data
+    }
+    
+    throw new Error(response.data.error || 'Failed to update profile')
+  } catch (error) {
+    throw new Error(getErrorMessage(error, 'Failed to update profile'))
+  }
+}
+
 export const getAvatars = async (): Promise<string[]> => {
   const response = await api.get('/crossword-auth/avatars')
   

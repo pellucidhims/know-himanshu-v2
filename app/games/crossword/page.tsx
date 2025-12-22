@@ -15,7 +15,8 @@ import {
   AlertCircle,
   RefreshCw,
   Flame,
-  LogOut
+  LogOut,
+  Settings
 } from 'lucide-react'
 import { fadeIn, staggerContainer, zoomIn } from '../../lib/utils'
 import GamesNavbar from '../../components/navigation/games-navbar'
@@ -34,6 +35,7 @@ import { AuthModal, UserInfoBadge } from '../../components/crossword/auth-modal'
 import { Leaderboard } from '../../components/crossword/leaderboard'
 import { StreakInfo, StreakBadge, StreakCompletion } from '../../components/crossword/streak-info'
 import { CrosswordAvatar } from '../../components/crossword/avatars'
+import ProfileEditModal from '../../components/crossword/profile-edit-modal'
 import {
   CrosswordUser,
   isAuthenticated,
@@ -527,6 +529,7 @@ export default function CrosswordPage() {
   // Streak mode state
   const [user, setUser] = useState<CrosswordUser | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showProfileEditModal, setShowProfileEditModal] = useState(false)
   const [showStreakCompletion, setShowStreakCompletion] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false) // Reset confirmation modal
   
@@ -1445,9 +1448,24 @@ export default function CrosswordPage() {
           >
             <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800/50">
               <div className="flex items-center gap-3">
-                <CrosswordAvatar avatarId={user.avatar} size={40} />
+                <button
+                  onClick={() => setShowProfileEditModal(true)}
+                  className="relative group"
+                  title="Edit Profile"
+                >
+                  <CrosswordAvatar avatarId={user.avatar} size={40} />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Settings className="w-4 h-4 text-white" />
+                  </div>
+                </button>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">{user?.username}</p>
+                  <button
+                    onClick={() => setShowProfileEditModal(true)}
+                    className="font-semibold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                    title="Edit Profile"
+                  >
+                    {user?.username}
+                  </button>
                   <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-sm">
                     <Flame className="w-4 h-4" />
                     <span>{user?.stats?.currentStreak ?? 0} day streak</span>
@@ -1455,6 +1473,14 @@ export default function CrosswordPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* Edit Profile Button */}
+                <button
+                  onClick={() => setShowProfileEditModal(true)}
+                  className="p-2 text-gray-500 hover:text-purple-500 transition-colors"
+                  title="Edit Profile"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
                 {/* Games Lobby Button */}
                 <Link
                   href="/games"
@@ -1703,6 +1729,19 @@ export default function CrosswordPage() {
           onClose={() => setShowAuthModal(false)}
           onSuccess={handleAuthSuccess}
         />
+        
+        {/* Profile Edit Modal */}
+        {user && (
+          <ProfileEditModal
+            isOpen={showProfileEditModal}
+            onClose={() => setShowProfileEditModal(false)}
+            user={user}
+            onProfileUpdate={(updates) => {
+              // Update local user state with new profile data
+              setUser(prev => prev ? { ...prev, ...updates } : null)
+            }}
+          />
+        )}
         
         {/* Reset Confirmation Modal */}
         <AnimatePresence>
