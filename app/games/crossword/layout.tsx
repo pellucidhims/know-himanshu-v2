@@ -1,7 +1,17 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+
+// PWA Viewport configuration for standalone mode
+export const viewport: Viewport = {
+  themeColor: '#10b981',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
 
 // SEO metadata specifically for Crossword game
 export const metadata: Metadata = {
+  manifest: '/crossword-manifest.json',
   title: 'Daily Crossword Puzzle | Free Online Word Game | Play Now',
   description: 'Play free daily crossword puzzle online! New puzzle every day at midnight IST. Challenge your vocabulary, build your streak, compete on leaderboards. No download required - play instantly in browser.',
   keywords: [
@@ -160,6 +170,21 @@ const crosswordJsonLd = {
   }
 }
 
+// Service Worker Registration Script
+const swRegistrationScript = `
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/crossword-sw.js', { scope: '/games/crossword' })
+      .then(function(registration) {
+        console.log('Crossword SW registered:', registration.scope);
+      })
+      .catch(function(error) {
+        console.log('Crossword SW registration failed:', error);
+      });
+  });
+}
+`
+
 export default function CrosswordLayout({
   children,
 }: {
@@ -167,6 +192,15 @@ export default function CrosswordLayout({
 }) {
   return (
     <>
+      {/* PWA Meta Tags for iOS */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="apple-mobile-web-app-title" content="Crossword" />
+      <link rel="apple-touch-icon" href="/crossword-icon-192.png" />
+      
+      {/* Service Worker Registration */}
+      <script dangerouslySetInnerHTML={{ __html: swRegistrationScript }} />
+      
       {/* JSON-LD Structured Data for Crossword */}
       <script
         type="application/ld+json"

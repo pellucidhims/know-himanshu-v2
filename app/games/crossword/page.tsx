@@ -36,6 +36,8 @@ import { Leaderboard } from '../../components/crossword/leaderboard'
 import { StreakInfo, StreakBadge, StreakCompletion } from '../../components/crossword/streak-info'
 import { CrosswordAvatar } from '../../components/crossword/avatars'
 import ProfileEditModal from '../../components/crossword/profile-edit-modal'
+import { InstallPWAPrompt, InstallPWAButton } from '../../components/crossword/install-pwa-prompt'
+import { NotificationBellButton } from '../../components/crossword/notification-prompt'
 import {
   CrosswordUser,
   isAuthenticated,
@@ -463,15 +465,16 @@ const GameModeSelector = ({
         </div>
       </motion.button>
       
-      {/* Games Lobby Link */}
-      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border/50">
+      {/* Games Lobby & Install App Links */}
+      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border/50 flex flex-col sm:flex-row items-center justify-center gap-4">
         <Link
           href="/games"
-          className="flex items-center justify-center gap-2 w-full py-3 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          className="flex items-center justify-center gap-2 py-3 px-4 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
           <Gamepad2 className="w-5 h-5" />
           <span>Browse Other Games</span>
         </Link>
+        <InstallPWAButton className="py-2" />
       </div>
     </motion.div>
   )
@@ -1489,6 +1492,10 @@ export default function CrosswordPage() {
                   <Gamepad2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Games Lobby</span>
                 </Link>
+                {/* Install PWA Button */}
+                <InstallPWAButton />
+                {/* Notification Bell - Only for logged in users */}
+                <NotificationBellButton isLoggedIn={!!user} userId={user?.id} />
                 <button
                   onClick={handleLogout}
                   className="p-2 text-gray-500 hover:text-red-500 transition-colors"
@@ -1550,13 +1557,16 @@ export default function CrosswordPage() {
               
               {/* Games Lobby button for timer mode */}
               {gameMode === 'timer' && (
-                <Link
-                  href="/games"
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-dark-bg text-gray-700 dark:text-gray-300 rounded-xl font-medium text-sm hover:bg-gray-200 dark:hover:bg-dark-surface transition-all border border-gray-200 dark:border-dark-border"
-                >
-                  <Gamepad2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Games</span>
-                </Link>
+                <>
+                  <Link
+                    href="/games"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-dark-bg text-gray-700 dark:text-gray-300 rounded-xl font-medium text-sm hover:bg-gray-200 dark:hover:bg-dark-surface transition-all border border-gray-200 dark:border-dark-border"
+                  >
+                    <Gamepad2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Games</span>
+                  </Link>
+                  <InstallPWAButton />
+                </>
               )}
             </>
           )}
@@ -1869,6 +1879,9 @@ export default function CrosswordPage() {
           )}
         </AnimatePresence>
       </motion.div>
+      
+      {/* PWA Install Prompt - Outside main container for fixed positioning */}
+      <InstallPWAPrompt />
     </div>
   )
 }
