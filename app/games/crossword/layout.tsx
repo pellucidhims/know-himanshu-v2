@@ -1,17 +1,16 @@
-import type { Metadata, Viewport } from 'next'
-
-// PWA Viewport configuration for standalone mode
-export const viewport: Viewport = {
-  themeColor: '#10b981',
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-}
+import type { Metadata } from 'next'
 
 // SEO metadata specifically for Crossword game
 export const metadata: Metadata = {
   manifest: '/crossword-manifest.json',
+  // PWA Viewport configuration
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: '#10b981',
   title: 'Daily Crossword Puzzle | Free Online Word Game | Play Now',
   description: 'Play free daily crossword puzzle online! New puzzle every day at midnight IST. Challenge your vocabulary, build your streak, compete on leaderboards. No download required - play instantly in browser.',
   keywords: [
