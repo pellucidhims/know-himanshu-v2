@@ -12,6 +12,7 @@ import { AvatarSelector, CrosswordAvatar } from './avatars'
 import { register, login, forgotPassword } from '../../lib/crossword/streak-api'
 import type { CrosswordUser } from '../../lib/crossword/streak-api'
 import { api } from '../../lib/api'
+import { linkPushSubscriptionToUser } from './notification-prompt'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -77,10 +78,14 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
         }
         
         const { user } = await register(email, password, selectedAvatar)
+        // Link any existing push subscription to the new user
+        linkPushSubscriptionToUser().catch(() => {})
         onSuccess(user)
         onClose()
       } else if (mode === 'login') {
         const { user } = await login(email, password)
+        // Link any existing push subscription to the logged-in user
+        linkPushSubscriptionToUser().catch(() => {})
         onSuccess(user)
         onClose()
       } else if (mode === 'forgot-password') {

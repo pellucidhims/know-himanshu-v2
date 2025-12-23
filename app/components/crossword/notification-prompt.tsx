@@ -5,6 +5,47 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, BellOff, X, Check, AlertCircle } from 'lucide-react'
 import { api } from '../../lib/api'
 
+/**
+ * Link existing push subscription to a user after login
+ * This should be called after successful authentication
+ */
+export const linkPushSubscriptionToUser = async (): Promise<boolean> => {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return false
+    }
+    
+    const registration = await navigator.serviceWorker.ready
+    const subscription = await registration.pushManager.getSubscription()
+    
+    if (!subscription) {
+      // No subscription to link
+      return false
+    }
+    
+    // Get auth token
+    const token = localStorage.getItem('crossword_token')
+    if (!token) {
+      return false
+    }
+    
+    // Link subscription to user
+    await api.post('/push/link-user', {
+      endpoint: subscription.endpoint,
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    
+    // console.log('[Notification] Subscription linked to user')
+    return true
+  } catch (error) {
+    console.error('[Notification] Failed to link subscription:', error)
+    return false
+  }
+}
+
 interface NotificationState {
   permission: NotificationPermission | 'unsupported'
   isSubscribed: boolean
