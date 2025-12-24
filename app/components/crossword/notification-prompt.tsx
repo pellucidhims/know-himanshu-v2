@@ -23,8 +23,8 @@ export const linkPushSubscriptionToUser = async (): Promise<boolean> => {
       return false
     }
     
-    // Get auth token
-    const token = localStorage.getItem('crossword_token')
+    // Get auth token (check correct key)
+    const token = localStorage.getItem('crossword_auth_token')
     if (!token) {
       return false
     }
@@ -160,9 +160,10 @@ export const NotificationPrompt = ({
       const registration = await navigator.serviceWorker.ready
       
       // Subscribe to push manager
+      const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey)
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
       })
 
       // Send subscription to server

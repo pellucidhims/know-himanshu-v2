@@ -28,10 +28,12 @@ export const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Add auth token if available
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    // Add auth token if available (check both possible keys)
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('crossword_auth_token') || localStorage.getItem('token')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
     }
     return config
   },
