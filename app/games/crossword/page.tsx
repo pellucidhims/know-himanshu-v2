@@ -1449,60 +1449,79 @@ export default function CrosswordPage() {
             variants={fadeIn('up', 0.05)}
             className="mb-4"
           >
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800/50">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowProfileEditModal(true)}
-                  className="relative group"
-                  title="Edit Profile"
-                >
-                  <CrosswordAvatar avatarId={user.avatar} size={40} />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Settings className="w-4 h-4 text-white" />
-                  </div>
-                </button>
-                <div>
+            <div className="p-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800/50">
+              {/* Row 1: User Info + Action Icons */}
+              <div className="flex items-center justify-between gap-2">
+                {/* User Info - Left Side */}
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <button
                     onClick={() => setShowProfileEditModal(true)}
-                    className="font-semibold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                    className="relative group flex-shrink-0"
                     title="Edit Profile"
                   >
-                    {user?.username}
+                    <CrosswordAvatar avatarId={user.avatar} size={36} />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Settings className="w-3 h-3 text-white" />
+                    </div>
                   </button>
-                  <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-sm">
-                    <Flame className="w-4 h-4" />
-                    <span>{user?.stats?.currentStreak ?? 0} day streak</span>
+                  <div className="min-w-0">
+                    <button
+                      onClick={() => setShowProfileEditModal(true)}
+                      className="font-semibold text-sm text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors truncate block max-w-[100px] sm:max-w-none"
+                      title="Edit Profile"
+                    >
+                      {user?.username}
+                    </button>
+                    <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-xs">
+                      <Flame className="w-3 h-3 flex-shrink-0" />
+                      <span>{user?.stats?.currentStreak ?? 0} day streak</span>
+                    </div>
                   </div>
                 </div>
+                
+                {/* Action Icons - Right Side (same row) */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Edit Profile Button - Hidden on mobile (avatar click works) */}
+                  <button
+                    onClick={() => setShowProfileEditModal(true)}
+                    className="hidden sm:flex p-2 text-gray-500 hover:text-purple-500 transition-colors rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                    title="Edit Profile"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                  
+                  {/* Games Lobby Button */}
+                  <Link
+                    href="/games"
+                    className="flex items-center justify-center gap-1.5 w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all"
+                    title="Games Lobby"
+                  >
+                    <Gamepad2 className="w-5 h-5" />
+                    <span className="hidden sm:inline">Games</span>
+                  </Link>
+                  
+                  {/* Install PWA Button - Desktop only in this row */}
+                  <div className="hidden sm:block">
+                    <InstallPWAButton />
+                  </div>
+                  
+                  {/* Notification Bell */}
+                  <NotificationBellButton isLoggedIn={!!user} userId={user?.id} />
+                  
+                  {/* Logout Button */}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {/* Edit Profile Button */}
-                <button
-                  onClick={() => setShowProfileEditModal(true)}
-                  className="p-2 text-gray-500 hover:text-purple-500 transition-colors"
-                  title="Edit Profile"
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
-                {/* Games Lobby Button */}
-                <Link
-                  href="/games"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all"
-                >
-                  <Gamepad2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Games Lobby</span>
-                </Link>
-                {/* Install PWA Button */}
-                <InstallPWAButton />
-                {/* Notification Bell - Only for logged in users */}
-                <NotificationBellButton isLoggedIn={!!user} userId={user?.id} />
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-gray-500 hover:text-red-500 transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
+              
+              {/* Row 2: Install App Button - Mobile Only */}
+              <div className="sm:hidden mt-3">
+                <InstallPWAButton variant="full" />
               </div>
             </div>
           </motion.div>

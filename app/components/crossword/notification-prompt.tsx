@@ -393,7 +393,7 @@ export const NotificationBellButton = ({
         onClick={() => setShowPrompt(true)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className={`relative p-2 rounded-lg transition-colors ${
+        className={`relative flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:p-2 rounded-lg transition-colors ${
           isSubscribed 
             ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
             : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-400'
@@ -402,7 +402,7 @@ export const NotificationBellButton = ({
       >
         <Bell className="w-5 h-5" />
         {!isSubscribed && (
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+          <span className="absolute top-1 right-1 sm:top-0 sm:right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
         )}
       </motion.button>
 

@@ -280,15 +280,15 @@ export const InstallPWAPrompt = () => {
             )}
           </AnimatePresence>
 
-          {/* Dismiss button */}
+          {/* Dismiss button - tiny, positioned at top-right corner */}
           <motion.button
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
             onClick={handleDismiss}
-            className="absolute -top-1 -right-1 p-1.5 bg-gray-800 rounded-full text-gray-300 hover:text-white hover:bg-gray-700 transition-colors shadow-lg"
+            className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 flex items-center justify-center bg-gray-800 rounded-full text-white hover:bg-gray-600 transition-colors shadow-sm"
           >
-            <X className="w-3 h-3" />
+            <X className="w-2 h-2 sm:w-2.5 sm:h-2.5" strokeWidth={2.5} />
           </motion.button>
         </motion.button>
 
@@ -526,7 +526,15 @@ export const InstallPWAPrompt = () => {
 }
 
 // Compact install button for header/inline use
-export const InstallPWAButton = ({ className = '' }: { className?: string }) => {
+// variant: 'compact' (default) - icon only on mobile, icon+text on desktop
+// variant: 'full' - full width button with icon and text
+export const InstallPWAButton = ({ 
+  className = '',
+  variant = 'compact'
+}: { 
+  className?: string
+  variant?: 'compact' | 'full'
+}) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showButton, setShowButton] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
@@ -587,13 +595,97 @@ export const InstallPWAButton = ({ className = '' }: { className?: string }) => 
     return null
   }
 
+  // Full width variant for mobile
+  if (variant === 'full') {
+    return (
+      <>
+        <motion.button
+          onClick={handleClick}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`relative w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg font-semibold text-sm hover:shadow-lg transition-all overflow-hidden ${className}`}
+          title="Install App"
+        >
+          {/* Shimmer effect */}
+          <motion.div
+            animate={{
+              x: ['-100%', '200%'],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatDelay: 3,
+              ease: "easeInOut",
+            }}
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
+          />
+          <Download className="w-5 h-5 relative z-10" />
+          <span className="relative z-10">Install App</span>
+        </motion.button>
+
+        {/* iOS/Android Instructions Modal */}
+        <AnimatePresence>
+          {showIOSInstructions && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowIOSInstructions(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Download className="w-5 h-5 text-emerald-500" />
+                  Install Crossword App
+                </h3>
+                {isIOS ? (
+                  <div className="space-y-3 text-gray-600 dark:text-gray-300">
+                    <p className="text-sm">To install on iOS:</p>
+                    <ol className="list-decimal list-inside space-y-2 text-sm">
+                      <li>Tap the <strong>Share</strong> button <span className="inline-block w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded text-center text-xs leading-5">↑</span></li>
+                      <li>Scroll and tap <strong>&quot;Add to Home Screen&quot;</strong></li>
+                      <li>Tap <strong>&quot;Add&quot;</strong> to confirm</li>
+                    </ol>
+                  </div>
+                ) : (
+                  <div className="space-y-3 text-gray-600 dark:text-gray-300">
+                    <p className="text-sm">To install on Android:</p>
+                    <ol className="list-decimal list-inside space-y-2 text-sm">
+                      <li>Tap the <strong>menu</strong> (⋮) in your browser</li>
+                      <li>Tap <strong>&quot;Add to Home Screen&quot;</strong> or <strong>&quot;Install App&quot;</strong></li>
+                      <li>Tap <strong>&quot;Install&quot;</strong> to confirm</li>
+                    </ol>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowIOSInstructions(false)}
+                  className="mt-4 w-full py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium"
+                >
+                  Got it
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </>
+    )
+  }
+
+  // Compact variant (default)
   return (
     <>
       <motion.button
         onClick={handleClick}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className={`relative flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all overflow-hidden ${className}`}
+        className={`relative flex items-center gap-1.5 px-2 py-2 sm:px-3 sm:py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg font-medium text-sm hover:shadow-lg transition-all overflow-hidden ${className}`}
+        title="Install App"
       >
         {/* Shimmer effect */}
         <motion.div
@@ -609,7 +701,7 @@ export const InstallPWAButton = ({ className = '' }: { className?: string }) => 
           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
         />
         <Download className="w-4 h-4 relative z-10" />
-        <span className="hidden sm:inline relative z-10">Install App</span>
+        <span className="hidden sm:inline relative z-10">Install</span>
       </motion.button>
 
       {/* iOS/Android Instructions Modal */}
