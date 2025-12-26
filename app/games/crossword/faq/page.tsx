@@ -58,8 +58,13 @@ const faqs = [
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  'mainEntity': faqs.map(faq => ({
+  '@id': 'https://www.knowhimanshu.in/games/crossword/faq/#faqpage',
+  'name': 'Crossword Puzzle FAQ',
+  'description': 'Frequently asked questions about our free daily crossword puzzle game',
+  'url': 'https://www.knowhimanshu.in/games/crossword/faq',
+  'mainEntity': faqs.map((faq, index) => ({
     '@type': 'Question',
+    '@id': `https://www.knowhimanshu.in/games/crossword/faq/#question-${index + 1}`,
     'name': faq.question,
     'acceptedAnswer': {
       '@type': 'Answer',

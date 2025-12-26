@@ -238,35 +238,12 @@ const jsonLd = {
         }
       ]
     },
-    // FAQPage for common questions
+    // Person schema for author
     {
-      '@type': 'FAQPage',
-      'mainEntity': [
-        {
-          '@type': 'Question',
-          'name': 'Are these games free to play?',
-          'acceptedAnswer': {
-            '@type': 'Answer',
-            'text': 'Yes, all games on Game Zone are completely free to play. No downloads or registrations required for basic gameplay.'
-          }
-        },
-        {
-          '@type': 'Question',
-          'name': 'Can I play these games on mobile?',
-          'acceptedAnswer': {
-            '@type': 'Answer',
-            'text': 'Yes, all games are optimized for both desktop and mobile browsers. Play anywhere, anytime!'
-          }
-        },
-        {
-          '@type': 'Question',
-          'name': 'How often is the crossword puzzle updated?',
-          'acceptedAnswer': {
-            '@type': 'Answer',
-            'text': 'A new crossword puzzle is generated every day at midnight IST (Indian Standard Time). Come back daily for a fresh challenge!'
-          }
-        }
-      ]
+      '@type': 'Person',
+      '@id': 'https://www.knowhimanshu.in/#person',
+      'name': 'Himanshu',
+      'url': 'https://www.knowhimanshu.in'
     }
   ]
 }

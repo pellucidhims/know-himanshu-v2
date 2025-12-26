@@ -6,6 +6,8 @@ import { ArrowLeft, BookOpen, MousePointer, Keyboard, RotateCcw, Send, Trophy, F
 const howToSchema = {
   '@context': 'https://schema.org',
   '@type': 'HowTo',
+  '@id': 'https://www.knowhimanshu.in/games/crossword/how-to-play/#howto',
+  'url': 'https://www.knowhimanshu.in/games/crossword/how-to-play',
   'name': 'How to Play Daily Crossword Puzzle',
   'description': 'A complete guide to playing our free daily crossword puzzle game, including controls, tips, and strategies.',
   'totalTime': 'PT5M',
