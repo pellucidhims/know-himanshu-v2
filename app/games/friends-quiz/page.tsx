@@ -524,6 +524,9 @@ export default function FriendsQuizPage() {
     setShowConfirmModal(true)
   }
 
+  // State for showing image preview modal on mobile
+  const [showImagePreview, setShowImagePreview] = useState<string | null>(null)
+
   // Download certificate as PNG
   const downloadCertificate = async () => {
     if (!certificateRef.current) return
@@ -533,19 +536,71 @@ export default function FriendsQuizPage() {
       const html2canvas = (await import('html2canvas')).default
       
       const canvas = await html2canvas(certificateRef.current, {
-        backgroundColor: null,
+        backgroundColor: '#5B21B6', // Match certificate background
         scale: 2,
         useCORS: true,
         allowTaint: true,
+        logging: false,
       })
 
+      const dataUrl = canvas.toDataURL('image/png')
+      const filename = `friends-quiz-certificate-${result?.score.percentage}percent.png`
+
+      // Check if on mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      
+      // Try Web Share API first (works well on mobile)
+      if (navigator.share && navigator.canShare) {
+        try {
+          // Convert data URL to blob for sharing
+          const response = await fetch(dataUrl)
+          const blob = await response.blob()
+          const file = new File([blob], filename, { type: 'image/png' })
+          
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Friends Quiz Certificate',
+              text: `I scored ${result?.score.percentage}% on the Friends Quiz!`,
+            })
+            return
+          }
+        } catch (shareErr) {
+          // User cancelled or share failed, continue to fallback
+          console.log('Share cancelled or failed, trying fallback...')
+        }
+      }
+
+      // Fallback for iOS: show inline preview (popups are blocked)
+      if (isIOS) {
+        setShowImagePreview(dataUrl)
+        return
+      }
+
+      // For Android and Desktop: try download link
       const link = document.createElement('a')
-      link.download = `friends-quiz-certificate-${result?.score.percentage}percent.png`
-      link.href = canvas.toDataURL('image/png')
-      link.click()
+      link.download = filename
+      link.href = dataUrl
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      
+      // Use a timeout to ensure the link is added to DOM
+      setTimeout(() => {
+        link.click()
+        document.body.removeChild(link)
+      }, 100)
+
+      // On Android, if download didn't trigger, show preview
+      if (isMobile) {
+        setTimeout(() => {
+          // If we're still here, show the preview as fallback
+          setShowImagePreview(dataUrl)
+        }, 500)
+      }
     } catch (err) {
       console.error('Failed to download certificate:', err)
-      alert('Failed to download certificate. Please try again.')
+      alert('Failed to create certificate. Please try taking a screenshot instead.')
     }
   }
 
@@ -696,38 +751,26 @@ export default function FriendsQuizPage() {
               exit={{ opacity: 0, y: -20 }}
               className="text-center"
             >
-              {/* Logo/Title with Character Parade */}
+              {/* Logo/Title with Cover Image */}
               <motion.div
-                initial={{ scale: 0.8, rotate: -5 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: 'spring', bounce: 0.5 }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', bounce: 0.4 }}
                 className="mb-8"
               >
-                {/* Mini character parade */}
-                <div className="flex justify-center gap-2 mb-6">
-                  {FRIENDS_CHARACTERS.map((char, idx) => (
-                    <motion.div
-                      key={char.id}
-                      className="relative w-12 h-12 sm:w-16 sm:h-16"
-                      initial={{ y: -50, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: idx * 0.1, type: 'spring' }}
-                      whileHover={{ scale: 1.2, y: -5 }}
-                    >
-                      <Image
-                        src={char.image}
-                        alt={char.name}
-                        fill
-                        className="object-contain drop-shadow-lg"
-                      />
-                    </motion.div>
-                  ))}
+                {/* Friends Cover Image - showing title and characters */}
+                <div className="relative w-full max-w-md mx-auto h-52 sm:h-64 md:h-72 overflow-hidden rounded-xl mb-4">
+                  <Image
+                    src="/friends-characters/friends_cover.png"
+                    alt="Friends Cast"
+                    fill
+                    className="object-cover object-center scale-110"
+                    style={{ objectPosition: 'center 45%' }}
+                    priority
+                  />
                 </div>
 
-                {/* Title without coffee cup */}
-                <h1 className="text-4xl sm:text-5xl font-bold text-white mb-2" style={{ fontFamily: 'serif' }}>
-                  F•R•I•E•N•D•S
-                </h1>
+                {/* Subtitle */}
                 <p className="text-2xl text-amber-400 font-bold">TRIVIA</p>
                 <p className="text-purple-300 text-lg mt-2">
                   &quot;The One Where You Prove You&apos;re A True Fan&quot;
@@ -1229,16 +1272,16 @@ export default function FriendsQuizPage() {
                     &quot;{result.badge?.description}&quot;
                   </motion.p>
 
-                  {/* Footer with bigger URL */}
-                  <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-yellow-400/30">
-                    <p className="text-yellow-300 text-xs sm:text-sm">☕ Central Perk Certified ☕</p>
+                  {/* Footer with URL */}
+                  <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-yellow-400/30 text-center">
+                    <p className="text-yellow-300 text-[10px] sm:text-xs">☕ Central Perk Certified ☕</p>
                     <a 
                       href="https://www.knowhimanshu.in/games/friends-quiz"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-yellow-200 hover:text-yellow-100 text-sm sm:text-base md:text-lg font-semibold mt-1 inline-block underline decoration-yellow-400/50 hover:decoration-yellow-300 transition-colors"
+                      className="text-yellow-200 hover:text-yellow-100 text-[9px] sm:text-xs md:text-sm font-semibold mt-1 inline-block underline decoration-yellow-400/50 hover:decoration-yellow-300 transition-colors whitespace-nowrap"
                     >
-                      www.knowhimanshu.in/games/friends-quiz
+                      knowhimanshu.in/games/friends-quiz
                     </a>
                   </div>
                 </div>
@@ -1276,12 +1319,69 @@ export default function FriendsQuizPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
-                    const text = `☕ I scored ${result.score.percentage}% on the F•R•I•E•N•D•S Quiz and earned the "${result.badge?.name}" badge! 🛋️🦞 Can you beat my score? #FriendsTrivia #CentralPerk`
-                    if (navigator.share) {
-                      navigator.share({ text, url: window.location.href })
+                    const funkyMessages = [
+                      `☕ OH. MY. GOD! I just scored ${result.score.percentage}% on the F•R•I•E•N•D•S Quiz! 🛋️ Could I BE any more of a fan? Earned the "${result.badge?.name}" badge! 🦞\n\nPIVOT your way to the quiz 👉 https://www.knowhimanshu.in/games/friends-quiz\n\n#FriendsTrivia #CentralPerk #HowYouDoin`,
+                      `🛋️ "How YOU doin'?" I'm doing GREAT because I scored ${result.score.percentage}% on the F•R•I•E•N•D•S Quiz! ☕ Got the "${result.badge?.name}" badge!\n\nI'll be there for you... at the quiz 👉 https://www.knowhimanshu.in/games/friends-quiz\n\n#FriendsTrivia #Lobster`,
+                      `☕ UNAGI! My Friends knowledge got me ${result.score.percentage}% and the "${result.badge?.name}" badge! 🦞 We were NOT on a break from this quiz!\n\nProve you're the Ross of trivia 👉 https://www.knowhimanshu.in/games/friends-quiz\n\n#FriendsQuiz #CentralPerk`,
+                    ];
+                    const text = funkyMessages[Math.floor(Math.random() * funkyMessages.length)];
+                    
+                    // Async function to handle image sharing
+                    const shareWithImage = async () => {
+                      if (!certificateRef.current) return false;
+                      
+                      try {
+                        const html2canvas = (await import('html2canvas')).default;
+                        const canvas = await html2canvas(certificateRef.current, {
+                          backgroundColor: '#5B21B6',
+                          scale: 2,
+                          useCORS: true,
+                          allowTaint: true,
+                          logging: false,
+                        });
+                        
+                        const blob = await new Promise<Blob>((resolve) => 
+                          canvas.toBlob((b) => resolve(b!), 'image/png')
+                        );
+                        const file = new File([blob], 'friends-quiz-certificate.png', { type: 'image/png' });
+                        
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                          await navigator.share({
+                            text,
+                            files: [file],
+                          });
+                          return true;
+                        }
+                      } catch (err) {
+                        console.log('Image share failed:', err);
+                      }
+                      return false;
+                    };
+                    
+                    // Check if we're on a real mobile device (not emulator)
+                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                    const hasShareApi = typeof navigator.share === 'function';
+                    const hasCanShareApi = typeof navigator.canShare === 'function';
+                    
+                    if (isMobile && hasShareApi && hasCanShareApi) {
+                      // On real mobile, try image sharing
+                      shareWithImage().then((success) => {
+                        if (!success) {
+                          // Fallback: just copy to clipboard
+                          navigator.clipboard.writeText(text);
+                          alert('📋 Copied to clipboard! Share it with your friends!');
+                        }
+                      });
+                    } else if (hasShareApi) {
+                      // Desktop or emulator: text-only share (synchronous)
+                      navigator.share({ text }).catch(() => {
+                        navigator.clipboard.writeText(text);
+                        alert('📋 Copied to clipboard! Share it with your friends!');
+                      });
                     } else {
-                      navigator.clipboard.writeText(text + ' ' + window.location.href)
-                      alert('Copied to clipboard!')
+                      // No share API: clipboard only
+                      navigator.clipboard.writeText(text);
+                      alert('📋 Copied to clipboard! Share it with your friends!');
                     }
                   }}
                   className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl hover:shadow-lg transition-all shadow-lg"
@@ -1379,6 +1479,50 @@ export default function FriendsQuizPage() {
                   </motion.button>
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Image Preview Modal for Mobile Download */}
+      <AnimatePresence>
+        {showImagePreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-4"
+            onClick={() => setShowImagePreview(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="relative max-w-full max-h-[70vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={showImagePreview} 
+                alt="Friends Quiz Certificate" 
+                className="max-w-full max-h-[70vh] object-contain rounded-xl shadow-2xl"
+              />
+            </motion.div>
+            
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mt-6 text-center"
+            >
+              <p className="text-white text-lg font-medium mb-2">📱 Long-press the image above</p>
+              <p className="text-purple-300 text-sm mb-4">Then tap &quot;Save to Photos&quot; or &quot;Download Image&quot;</p>
+              <button
+                onClick={() => setShowImagePreview(null)}
+                className="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition-colors"
+              >
+                Close
+              </button>
             </motion.div>
           </motion.div>
         )}
