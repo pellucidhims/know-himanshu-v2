@@ -25,6 +25,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: today,
     },
     {
+      url: `${baseUrl}/games/crossword/faq`,
+      lastModified: today,
+    },
+    {
+      url: `${baseUrl}/games/crossword/how-to-play`,
+      lastModified: today,
+    },
+    {
       url: `${baseUrl}/games/tic-tac-toe`,
       lastModified: today,
     },

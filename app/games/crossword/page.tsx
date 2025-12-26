@@ -16,7 +16,8 @@ import {
   RefreshCw,
   Flame,
   LogOut,
-  Settings
+  Settings,
+  Share2
 } from 'lucide-react'
 import { fadeIn, staggerContainer, zoomIn } from '../../lib/utils'
 import GamesNavbar from '../../components/navigation/games-navbar'
@@ -38,6 +39,9 @@ import { CrosswordAvatar } from '../../components/crossword/avatars'
 import ProfileEditModal from '../../components/crossword/profile-edit-modal'
 import { InstallPWAPrompt, InstallPWAButton } from '../../components/crossword/install-pwa-prompt'
 import { NotificationBellButton } from '../../components/crossword/notification-prompt'
+import { ShareCard } from '../../components/crossword/share-card'
+import { BadgeRow, NewBadgeUnlock, BadgeShowcase } from '../../components/crossword/badge-display'
+import { formatUserBadges, Badge } from '../../lib/crossword/badges'
 import {
   CrosswordUser,
   isAuthenticated,
@@ -466,15 +470,36 @@ const GameModeSelector = ({
       </motion.button>
       
       {/* Games Lobby & Install App Links */}
-      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border/50 flex flex-col sm:flex-row items-center justify-center gap-4">
-        <Link
-          href="/games"
-          className="flex items-center justify-center gap-2 py-3 px-4 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-        >
-          <Gamepad2 className="w-5 h-5" />
-          <span>Browse Other Games</span>
-        </Link>
-        <InstallPWAButton className="py-2" />
+      <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border/50 flex flex-col items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <Link
+            href="/games"
+            className="flex items-center justify-center gap-2 py-2 px-4 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          >
+            <Gamepad2 className="w-5 h-5" />
+            <span>Browse Other Games</span>
+          </Link>
+          <InstallPWAButton className="py-2" />
+        </div>
+        
+        {/* Help Links */}
+        <div className="flex items-center gap-4 text-sm">
+          <Link
+            href="/games/crossword/how-to-play"
+            className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors"
+          >
+            <Lightbulb className="w-4 h-4" />
+            <span>How to Play</span>
+          </Link>
+          <span className="text-gray-300 dark:text-gray-600">•</span>
+          <Link
+            href="/games/crossword/faq"
+            className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors"
+          >
+            <AlertCircle className="w-4 h-4" />
+            <span>FAQ</span>
+          </Link>
+        </div>
       </div>
     </motion.div>
   )
@@ -536,6 +561,12 @@ export default function CrosswordPage() {
   const [showStreakCompletion, setShowStreakCompletion] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false) // Reset confirmation modal
   
+  // Share and badges state
+  const [showShareCard, setShowShareCard] = useState(false)
+  const [showBadgeShowcase, setShowBadgeShowcase] = useState(false)
+  const [newlyEarnedBadges, setNewlyEarnedBadges] = useState<Badge[]>([])
+  const [userBadges, setUserBadges] = useState<Badge[]>([])
+  
   // Refs for cell inputs
   const cellRefs = useRef<Map<string, HTMLInputElement>>(new Map())
   
@@ -549,10 +580,18 @@ export default function CrosswordPage() {
         const storedUser = getStoredUser()
         if (storedUser) {
           setUser(storedUser)
+          // Load stored badges if available
+          if (storedUser.badges) {
+            setUserBadges(formatUserBadges(storedUser.badges))
+          }
           // Verify token is still valid
           const verifiedUser = await verifyToken()
           if (verifiedUser) {
             setUser(verifiedUser)
+            // Update badges from verified user
+            if (verifiedUser.badges) {
+              setUserBadges(formatUserBadges(verifiedUser.badges))
+            }
             // Check if saved state has streak mode
             const savedState = loadPuzzleState()
             if (savedState?.gameMode === 'streak') {
@@ -567,6 +606,7 @@ export default function CrosswordPage() {
             }
           } else {
             setUser(null)
+            setUserBadges([])
             // If user was in streak mode but token is invalid, switch to timer mode
             setGameMode(prev => prev === 'streak' ? 'timer' : prev)
           }
@@ -827,6 +867,12 @@ export default function CrosswordPage() {
   const handleAuthSuccess = (newUser: CrosswordUser) => {
     setUser(newUser)
     setShowAuthModal(false)
+    
+    // Load user's badges if they have any
+    if (newUser.badges && newUser.badges.length > 0) {
+      setUserBadges(formatUserBadges(newUser.badges))
+    }
+    
     // Auto-start streak mode after login
     // Preserve current state if user was already playing timed challenge
     const wasPlayingTimed = gameMode === 'timer'
@@ -840,6 +886,10 @@ export default function CrosswordPage() {
     setUser(null)
     setGameMode(null)
     setShowStreakCompletion(false)
+    
+    // Clear badges
+    setUserBadges([])
+    setNewlyEarnedBadges([])
     
     // Clear localStorage to prevent data leakage between users
     clearPuzzleState()
@@ -1188,6 +1238,18 @@ export default function CrosswordPage() {
           // Update user with new stats
           setUser(prev => prev ? { ...prev, stats: result.stats } : null)
           setShowStreakCompletion(true)
+          
+          // Handle newly earned badges
+          if (result.newBadges && result.newBadges.length > 0) {
+            const formattedNewBadges = formatUserBadges(result.newBadges)
+            setNewlyEarnedBadges(formattedNewBadges)
+          }
+          
+          // Update all badges
+          if (result.badges) {
+            const formattedBadges = formatUserBadges(result.badges)
+            setUserBadges(formattedBadges)
+          }
         } catch (err) {
           console.error('Failed to complete puzzle:', err)
         }
@@ -1493,6 +1555,17 @@ export default function CrosswordPage() {
                       <Flame className="w-3 h-3 flex-shrink-0" />
                       <span>{user?.stats?.currentStreak ?? 0} day streak</span>
                     </div>
+                    {/* Badges indicator */}
+                    {userBadges.length > 0 && (
+                      <button
+                        onClick={() => setShowBadgeShowcase(true)}
+                        className="flex items-center gap-1 text-purple-600 dark:text-purple-400 text-xs hover:text-purple-500 transition-colors"
+                        title="View Badges"
+                      >
+                        <Trophy className="w-3 h-3 flex-shrink-0" />
+                        <span>{userBadges.length} badges</span>
+                      </button>
+                    )}
                   </div>
                 </div>
                 
@@ -1515,6 +1588,32 @@ export default function CrosswordPage() {
                   >
                     <Gamepad2 className="w-5 h-5" />
                     <span className="hidden sm:inline">Games</span>
+                  </Link>
+                  
+                  {/* Badges Button - Show if user has any badges */}
+                  {userBadges.length > 0 && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowBadgeShowcase(true)}
+                      className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-lg hover:shadow-lg transition-all"
+                      title={`View your ${userBadges.length} badges`}
+                    >
+                      <Trophy className="w-5 h-5" />
+                      {/* Badge count indicator */}
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {userBadges.length}
+                      </span>
+                    </motion.button>
+                  )}
+                  
+                  {/* Help Button */}
+                  <Link
+                    href="/games/crossword/how-to-play"
+                    className="flex items-center justify-center w-10 h-10 text-amber-500 hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors rounded-lg"
+                    title="How to Play"
+                  >
+                    <Lightbulb className="w-5 h-5" />
                   </Link>
                   
                   {/* Install PWA Button - Desktop only in this row */}
@@ -1569,12 +1668,35 @@ export default function CrosswordPage() {
                 <StreakBadge currentStreak={user.stats.currentStreak ?? 0} />
               )}
               
-              {/* Completed badge when puzzle is solved */}
+              {/* Completed badge when puzzle is solved - clickable to share */}
               {isComplete && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg">
-                  <Trophy className="w-5 h-5" />
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowShareCard(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                  title="Share your score"
+                >
+                  <Share2 className="w-5 h-5" />
                   <span>Completed!</span>
-                </div>
+                </motion.button>
+              )}
+              
+              {/* Badges button - visible when user has earned badges */}
+              {userBadges.length > 0 && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowBadgeShowcase(true)}
+                  className="relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                  title={`View your ${userBadges.length} badges`}
+                >
+                  <Trophy className="w-5 h-5" />
+                  <span className="hidden sm:inline">Badges</span>
+                  <span className="w-6 h-6 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {userBadges.length}
+                  </span>
+                </motion.button>
               )}
               
               {/* Enter Streak Mode button during timed play - visible even after completion */}
@@ -1613,6 +1735,14 @@ export default function CrosswordPage() {
                   >
                     <Gamepad2 className="w-4 h-4" />
                     <span className="hidden sm:inline">Games</span>
+                  </Link>
+                  <Link
+                    href="/games/crossword/how-to-play"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-xl font-medium text-sm hover:bg-amber-200 dark:hover:bg-amber-900/30 transition-all border border-amber-200 dark:border-amber-800"
+                    title="How to Play"
+                  >
+                    <Lightbulb className="w-4 h-4" />
+                    <span className="hidden sm:inline">Help</span>
                   </Link>
                   <InstallPWAButton />
                 </>
@@ -1782,6 +1912,44 @@ export default function CrosswordPage() {
           </motion.div>
         )}
         
+        {/* Help & Resources Footer */}
+        <motion.div
+          variants={fadeIn('up', 0.5)}
+          className="mt-8 py-6 border-t border-gray-200 dark:border-dark-border"
+        >
+          <div className="max-w-2xl mx-auto text-center">
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider">
+              Help & Resources
+            </h3>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+              <Link
+                href="/games/crossword/how-to-play"
+                className="flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors"
+              >
+                <Lightbulb className="w-4 h-4" />
+                <span>How to Play</span>
+              </Link>
+              <Link
+                href="/games/crossword/faq"
+                className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors"
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span>FAQ</span>
+              </Link>
+              <Link
+                href="/games"
+                className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-500 transition-colors"
+              >
+                <Gamepad2 className="w-4 h-4" />
+                <span>More Games</span>
+              </Link>
+            </div>
+            <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
+              New puzzle every day at midnight IST • Play free, no download required
+            </p>
+          </div>
+        </motion.div>
+        
         {/* Auth Modal (for switching to streak mode mid-game) */}
         <AuthModal 
           isOpen={showAuthModal}
@@ -1912,17 +2080,42 @@ export default function CrosswordPage() {
                         </span>
                       </div>
                     )}
+                    {/* Show badges earned */}
+                    {userBadges.length > 0 && (
+                      <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Your Badges</p>
+                        <div className="flex justify-center">
+                          <BadgeRow badges={userBadges} maxShow={4} size="sm" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowWinModal(false)}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300"
-                >
-                  View Puzzle
-                </motion.button>
+                <div className="flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setShowWinModal(false)
+                      setShowShareCard(true)
+                    }}
+                    className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    Share
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowWinModal(false)}
+                    className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300"
+                  >
+                    View Puzzle
+                  </motion.button>
+                </div>
               </motion.div>
             </motion.div>
           )}
@@ -1931,6 +2124,37 @@ export default function CrosswordPage() {
       
       {/* PWA Install Prompt - Outside main container for fixed positioning */}
       <InstallPWAPrompt />
+      
+      {/* Share Card Modal */}
+      {puzzleData && (
+        <ShareCard
+          isOpen={showShareCard}
+          onClose={() => setShowShareCard(false)}
+          puzzleDate={puzzleData.dateGenerated}
+          timeSeconds={timer}
+          attempts={submissions}
+          streak={user?.stats?.currentStreak ?? 0}
+          gridState={userGrid}
+          gridData={puzzleData.grid}
+          badges={userBadges}
+          username={user?.username}
+        />
+      )}
+      
+      {/* New Badge Unlock Animation */}
+      {newlyEarnedBadges.length > 0 && (
+        <NewBadgeUnlock
+          badges={newlyEarnedBadges}
+          onComplete={() => setNewlyEarnedBadges([])}
+        />
+      )}
+      
+      {/* Badge Showcase Modal */}
+      <BadgeShowcase
+        isOpen={showBadgeShowcase}
+        onClose={() => setShowBadgeShowcase(false)}
+        earnedBadges={userBadges}
+      />
     </div>
   )
 }

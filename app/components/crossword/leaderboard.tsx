@@ -3,11 +3,12 @@
 /**
  * Crossword Leaderboard Component
  * Shows top players by streak or average solve time
+ * With rate limiting support and local caching
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Flame, Clock, ChevronDown, Crown, Medal, Award } from 'lucide-react'
+import { Trophy, Flame, Clock, ChevronDown, Crown, Medal, Award, AlertCircle, RefreshCw } from 'lucide-react'
 import { CrosswordAvatar } from './avatars'
 import { getLeaderboard } from '../../lib/crossword/streak-api'
 import type { LeaderboardEntry, LeaderboardResponse } from '../../lib/crossword/streak-api'
@@ -15,6 +16,88 @@ import type { LeaderboardEntry, LeaderboardResponse } from '../../lib/crossword/
 interface LeaderboardProps {
   className?: string
   compact?: boolean
+}
+
+// Cache keys for localStorage
+const CACHE_KEY_PREFIX = 'crossword_leaderboard_'
+const RATE_LIMIT_KEY = 'crossword_leaderboard_rate_limit'
+
+interface CachedLeaderboard {
+  data: LeaderboardResponse
+  timestamp: number
+  sortBy: 'streak' | 'time'
+}
+
+interface RateLimitInfo {
+  isLimited: boolean
+  expiresAt: number // timestamp when rate limit expires
+}
+
+// Get cached leaderboard data
+const getCachedData = (sortBy: 'streak' | 'time'): CachedLeaderboard | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const cached = localStorage.getItem(`${CACHE_KEY_PREFIX}${sortBy}`)
+    return cached ? JSON.parse(cached) : null
+  } catch {
+    return null
+  }
+}
+
+// Save leaderboard data to cache
+const setCachedData = (sortBy: 'streak' | 'time', data: LeaderboardResponse): void => {
+  if (typeof window === 'undefined') return
+  try {
+    const cacheEntry: CachedLeaderboard = {
+      data,
+      timestamp: Date.now(),
+      sortBy
+    }
+    localStorage.setItem(`${CACHE_KEY_PREFIX}${sortBy}`, JSON.stringify(cacheEntry))
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+// Get rate limit info
+const getRateLimitInfo = (): RateLimitInfo | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const info = localStorage.getItem(RATE_LIMIT_KEY)
+    if (!info) return null
+    const parsed = JSON.parse(info) as RateLimitInfo
+    // Check if rate limit has expired
+    if (parsed.expiresAt < Date.now()) {
+      localStorage.removeItem(RATE_LIMIT_KEY)
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+// Set rate limit info
+const setRateLimitInfo = (retryAfterMs: number): void => {
+  if (typeof window === 'undefined') return
+  try {
+    const info: RateLimitInfo = {
+      isLimited: true,
+      expiresAt: Date.now() + retryAfterMs
+    }
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(info))
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+// Format remaining time
+const formatRemainingTime = (expiresAt: number): string => {
+  const remaining = expiresAt - Date.now()
+  if (remaining <= 0) return 'now'
+  const minutes = Math.ceil(remaining / (60 * 1000))
+  if (minutes === 1) return '1 minute'
+  return `${minutes} minutes`
 }
 
 // Format time from seconds to readable format
@@ -103,28 +186,102 @@ const LeaderboardRow = ({ entry, sortBy, index }: LeaderboardRowProps) => {
 export const Leaderboard = ({ className = '', compact = false }: LeaderboardProps) => {
   const [sortBy, setSortBy] = useState<'streak' | 'time'>('streak')
   const [data, setData] = useState<LeaderboardResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isExpanded, setIsExpanded] = useState(!compact)
+  const [isExpanded, setIsExpanded] = useState(false) // Always start collapsed
+  const [hasFetched, setHasFetched] = useState(false) // Track if we've fetched for current sortBy
+  const [rateLimitInfo, setRateLimitState] = useState<RateLimitInfo | null>(null)
+  const [isFromCache, setIsFromCache] = useState(false)
+  const [, forceUpdate] = useState(0) // For re-rendering countdown
 
+  // Check rate limit status on mount and periodically
   useEffect(() => {
-    const fetchLeaderboard = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const response = await getLeaderboard(sortBy)
-        setData(response)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load leaderboard')
-      } finally {
-        setIsLoading(false)
+    const checkRateLimit = () => {
+      const info = getRateLimitInfo()
+      setRateLimitState(info)
+      if (!info) {
+        setIsFromCache(false)
       }
     }
+    
+    checkRateLimit()
+    // Check every 30 seconds to update countdown
+    const interval = setInterval(() => {
+      checkRateLimit()
+      forceUpdate(n => n + 1)
+    }, 30000)
+    
+    return () => clearInterval(interval)
+  }, [])
 
-    fetchLeaderboard()
+  // Fetch leaderboard with rate limit handling
+  const fetchLeaderboard = useCallback(async (forceFetch = false) => {
+    // Check if rate limited
+    const currentRateLimit = getRateLimitInfo()
+    if (currentRateLimit && !forceFetch) {
+      // Use cached data if rate limited
+      const cached = getCachedData(sortBy)
+      if (cached) {
+        setData(cached.data)
+        setIsFromCache(true)
+        setRateLimitState(currentRateLimit)
+      }
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setIsFromCache(false)
+    
+    try {
+      const response = await getLeaderboard(sortBy)
+      setData(response)
+      setCachedData(sortBy, response) // Cache the response
+      setHasFetched(true)
+      setRateLimitState(null)
+    } catch (err: unknown) {
+      // Check if it's a rate limit error
+      const errorResponse = err as { response?: { data?: { rateLimited?: boolean; retryAfterMs?: number } } }
+      if (errorResponse?.response?.data?.rateLimited) {
+        const retryAfterMs = errorResponse.response.data.retryAfterMs || 30 * 60 * 1000
+        setRateLimitInfo(retryAfterMs)
+        setRateLimitState({ isLimited: true, expiresAt: Date.now() + retryAfterMs })
+        
+        // Load from cache
+        const cached = getCachedData(sortBy)
+        if (cached) {
+          setData(cached.data)
+          setIsFromCache(true)
+        } else {
+          setError('Rate limited. Please try again later.')
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to load leaderboard')
+        // Try to use cached data on error
+        const cached = getCachedData(sortBy)
+        if (cached) {
+          setData(cached.data)
+          setIsFromCache(true)
+        }
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }, [sortBy])
 
-  if (compact && !isExpanded) {
+  // Only fetch when expanded
+  useEffect(() => {
+    if (!isExpanded) return
+    fetchLeaderboard()
+  }, [sortBy, isExpanded, fetchLeaderboard])
+  
+  // Reset hasFetched when sortBy changes
+  useEffect(() => {
+    setHasFetched(false)
+  }, [sortBy])
+
+  // Show collapsed state if not expanded
+  if (!isExpanded) {
     return (
       <motion.button
         whileHover={{ scale: 1.02 }}
@@ -134,12 +291,14 @@ export const Leaderboard = ({ className = '', compact = false }: LeaderboardProp
           flex items-center justify-between w-full p-4 
           bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20
           border border-amber-200 dark:border-amber-800 rounded-xl
+          hover:shadow-md transition-all
           ${className}
         `}
       >
         <div className="flex items-center gap-2">
           <Trophy className="w-5 h-5 text-amber-500" />
           <span className="font-semibold text-gray-900 dark:text-white">Leaderboard</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">(click to expand)</span>
         </div>
         <ChevronDown className="w-5 h-5 text-gray-500" />
       </motion.button>
@@ -154,17 +313,60 @@ export const Leaderboard = ({ className = '', compact = false }: LeaderboardProp
           <div className="flex items-center gap-2">
             <Trophy className="w-6 h-6 text-amber-500" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Leaderboard</h3>
+            {isFromCache && (
+              <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                Cached
+              </span>
+            )}
           </div>
           
-          {compact && (
+          <div className="flex items-center gap-2">
+            {/* Refresh button - disabled if rate limited */}
+            {!isLoading && (
+              <button
+                onClick={() => fetchLeaderboard(false)}
+                disabled={!!rateLimitInfo}
+                className={`
+                  p-1.5 rounded-lg transition-all
+                  ${rateLimitInfo 
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}
+                `}
+                title={rateLimitInfo ? `Refresh available in ${formatRemainingTime(rateLimitInfo.expiresAt)}` : 'Refresh leaderboard'}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            )}
+            
             <button
               onClick={() => setIsExpanded(false)}
-              className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1"
             >
+              <ChevronDown className="w-4 h-4 rotate-180" />
               Collapse
             </button>
-          )}
+          </div>
         </div>
+
+        {/* Rate Limit Banner */}
+        {rateLimitInfo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mt-3 flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+          >
+            <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <div className="flex-1 text-sm">
+              <p className="text-amber-700 dark:text-amber-300 font-medium">
+                Leaderboard refresh limit reached
+              </p>
+              <p className="text-amber-600 dark:text-amber-400 text-xs">
+                {isFromCache ? 'Showing cached data. ' : ''}
+                Refresh available in {formatRemainingTime(rateLimitInfo.expiresAt)}
+              </p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Sort Toggle */}
         <div className="flex gap-2 mt-3">

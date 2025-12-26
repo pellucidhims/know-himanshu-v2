@@ -45,12 +45,19 @@ const getErrorMessage = (error: unknown, defaultMessage: string): string => {
 // Types
 // ==========================================
 
+export interface UserBadge {
+  id: string
+  earnedAt?: string
+  tier?: number
+}
+
 export interface CrosswordUser {
   id: string
   email: string
   username: string
   avatar: string
   stats: UserStats
+  badges?: UserBadge[]
   createdAt?: string
 }
 
@@ -353,12 +360,25 @@ export const saveProgress = async (
   })
 }
 
+export interface CompletePuzzleResponse {
+  stats: UserStats
+  badges?: UserBadge[]
+  newBadges?: UserBadge[]
+  gameHistory?: {
+    puzzleDate: string
+    attempts: number
+    timeToComplete: number
+    completedAt: string
+  }
+  alreadyCompleted?: boolean
+}
+
 export const completePuzzle = async (
   puzzleDate: string,
   attempts: number,
   timeToComplete: number,
   gridState?: string[][]
-): Promise<{ stats: UserStats }> => {
+): Promise<CompletePuzzleResponse> => {
   const token = getAuthToken()
   if (!token) throw new Error('Not authenticated')
   
@@ -372,10 +392,13 @@ export const completePuzzle = async (
   })
   
   if (response.data.success) {
-    // Update stored user stats
+    // Update stored user with stats and badges
     const user = getStoredUser()
     if (user) {
       user.stats = response.data.data.stats
+      if (response.data.data.badges) {
+        user.badges = response.data.data.badges
+      }
       localStorage.setItem(USER_KEY, JSON.stringify(user))
     }
     return response.data.data
@@ -441,8 +464,17 @@ export const getLeaderboard = async (
   const token = getAuthToken()
   
   const response = await api.get('/crossword-streak/leaderboard', {
-    params: { sortBy },
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    params: { 
+      sortBy,
+      // Add timestamp to bust browser cache
+      _t: Date.now(),
+    },
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Prevent browser from caching
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+    },
   })
   
   if (response.data.success) {
