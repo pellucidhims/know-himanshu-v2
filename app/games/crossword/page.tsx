@@ -737,7 +737,7 @@ export default function CrosswordPage() {
   const startStreakMode = async (preserveCurrentState: boolean = false, authenticatedUser?: CrosswordUser) => {
     const activeUser = authenticatedUser || user
     if (!activeUser || !puzzleData) {
-      console.warn('startStreakMode: Missing user or puzzleData', { hasUser: !!activeUser, hasPuzzle: !!puzzleData })
+    //   console.warn('startStreakMode: Missing user or puzzleData', { hasUser: !!activeUser, hasPuzzle: !!puzzleData })
       return
     }
     
@@ -790,7 +790,24 @@ export default function CrosswordPage() {
       } else if (preserveCurrentState && wasPlaying) {
         // User was playing timed challenge - preserve their progress
         // Keep current grid, timer and submissions (already set)
-        // No need to override from server since user has local progress
+        
+        // IMPORTANT: If user completed the game before logging in, save it to server now
+        if (isComplete && !savedGame?.completed) {
+          try {
+            // Save the completed game to server
+            // Note: completePuzzle(puzzleDate, attempts, timeToComplete, gridState)
+            await completePuzzle(
+              puzzleData.dateGenerated,
+              submissions,  // attempts count
+              timer,        // time to complete in seconds
+              userGrid
+            )
+            setShowStreakCompletion(true)
+            // console.log('Saved timer mode completion to streak after login')
+          } catch (err) {
+            console.error('Failed to save completed game to streak:', err)
+          }
+        }
       } else if (savedGame && !savedGame.completed) {
         // Restore saved state from server (fresh login, no local progress)
         if (savedGame.gridState && savedGame.gridState.length > 0) {
@@ -1560,17 +1577,30 @@ export default function CrosswordPage() {
                 </div>
               )}
               
-              {/* Enter Streak Mode button during timed play */}
-              {gameMode === 'timer' && !isComplete && (
+              {/* Enter Streak Mode button during timed play - visible even after completion */}
+              {gameMode === 'timer' && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setShowAuthModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+                  className={`flex items-center gap-2 px-4 py-2 text-white rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all ${
+                    isComplete 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 animate-pulse' 
+                      : 'bg-gradient-to-r from-orange-500 to-red-500'
+                  }`}
                 >
                   <Flame className="w-4 h-4" />
-                  <span className="hidden sm:inline">Enter Streak Mode</span>
-                  <span className="sm:hidden">Streak</span>
+                  {isComplete ? (
+                    <>
+                      <span className="hidden sm:inline">Save to Streak!</span>
+                      <span className="sm:hidden">Save!</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Enter Streak Mode</span>
+                      <span className="sm:hidden">Streak</span>
+                    </>
+                  )}
                 </motion.button>
               )}
               
