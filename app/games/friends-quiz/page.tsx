@@ -302,7 +302,7 @@ const CharacterQuestion = ({
           </div>
 
           {/* Question Text */}
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mt-2 leading-relaxed" style={{ fontFamily: 'Comic Sans MS, cursive, sans-serif' }}>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mt-2 leading-relaxed" style={{ fontFamily: '"Comic Sans MS", "Chalkboard SE", "Comic Neue", Arial, sans-serif' }}>
             {question}
           </h2>
         </div>
@@ -526,17 +526,23 @@ export default function FriendsQuizPage() {
 
   // State for showing image preview modal on mobile
   const [showImagePreview, setShowImagePreview] = useState<string | null>(null)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
 
   // Download certificate as PNG
   const downloadCertificate = async () => {
-    if (!certificateRef.current) return
+    if (!certificateRef.current) {
+      alert('Certificate not ready. Please try again.')
+      return
+    }
+
+    setIsGeneratingImage(true)
 
     try {
       // Dynamically import html2canvas
       const html2canvas = (await import('html2canvas')).default
       
       const canvas = await html2canvas(certificateRef.current, {
-        backgroundColor: '#5B21B6', // Match certificate background
+        backgroundColor: '#5B21B6',
         scale: 2,
         useCORS: true,
         allowTaint: true,
@@ -544,63 +550,16 @@ export default function FriendsQuizPage() {
       })
 
       const dataUrl = canvas.toDataURL('image/png')
-      const filename = `friends-quiz-certificate-${result?.score.percentage}percent.png`
-
-      // Check if on mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
       
-      // Try Web Share API first (works well on mobile)
-      if (navigator.share && navigator.canShare) {
-        try {
-          // Convert data URL to blob for sharing
-          const response = await fetch(dataUrl)
-          const blob = await response.blob()
-          const file = new File([blob], filename, { type: 'image/png' })
-          
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              files: [file],
-              title: 'Friends Quiz Certificate',
-              text: `I scored ${result?.score.percentage}% on the Friends Quiz!`,
-            })
-            return
-          }
-        } catch (shareErr) {
-          // User cancelled or share failed, continue to fallback
-          console.log('Share cancelled or failed, trying fallback...')
-        }
-      }
-
-      // Fallback for iOS: show inline preview (popups are blocked)
-      if (isIOS) {
-        setShowImagePreview(dataUrl)
-        return
-      }
-
-      // For Android and Desktop: try download link
-      const link = document.createElement('a')
-      link.download = filename
-      link.href = dataUrl
-      link.style.display = 'none'
-      document.body.appendChild(link)
+      // Always show the image preview on mobile - most reliable method
+      // User can long-press to save
+      setShowImagePreview(dataUrl)
       
-      // Use a timeout to ensure the link is added to DOM
-      setTimeout(() => {
-        link.click()
-        document.body.removeChild(link)
-      }, 100)
-
-      // On Android, if download didn't trigger, show preview
-      if (isMobile) {
-        setTimeout(() => {
-          // If we're still here, show the preview as fallback
-          setShowImagePreview(dataUrl)
-        }, 500)
-      }
     } catch (err) {
-      console.error('Failed to download certificate:', err)
+      console.error('Failed to generate certificate:', err)
       alert('Failed to create certificate. Please try taking a screenshot instead.')
+    } finally {
+      setIsGeneratingImage(false)
     }
   }
 
@@ -983,7 +942,7 @@ export default function FriendsQuizPage() {
                           : 'bg-white/90 text-gray-800 border-purple-300 hover:border-amber-400 hover:bg-white'
                         }
                       `}
-                      style={{ fontFamily: 'Comic Sans MS, cursive, sans-serif' }}
+                      style={{ fontFamily: '"Comic Sans MS", "Chalkboard SE", "Comic Neue", Arial, sans-serif' }}
                     >
                       <motion.div 
                         className={`
@@ -1033,7 +992,7 @@ export default function FriendsQuizPage() {
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full">
                         <div className="w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-yellow-400 border-b-[8px] border-b-transparent" />
                       </div>
-                      <p className="text-yellow-800 font-medium text-sm" style={{ fontFamily: 'Comic Sans MS, cursive, sans-serif' }}>
+                      <p className="text-yellow-800 font-medium text-sm" style={{ fontFamily: '"Comic Sans MS", "Chalkboard SE", "Comic Neue", Arial, sans-serif' }}>
                         ⚠️ Gotta choose an option to proceed!
                       </p>
                     </div>
@@ -1298,11 +1257,16 @@ export default function FriendsQuizPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={downloadCertificate}
-                  className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl hover:shadow-lg transition-all shadow-lg"
+                  disabled={isGeneratingImage}
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl hover:shadow-lg transition-all shadow-lg disabled:opacity-70"
                 >
-                  <Download className="w-5 h-5" />
-                  <span className="hidden sm:inline">Download Certificate</span>
-                  <span className="sm:hidden">Download</span>
+                  {isGeneratingImage ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5" />
+                  )}
+                  <span className="hidden sm:inline">{isGeneratingImage ? 'Generating...' : 'Download Certificate'}</span>
+                  <span className="sm:hidden">{isGeneratingImage ? '...' : 'Download'}</span>
                 </motion.button>
 
                 <motion.button
@@ -1318,7 +1282,7 @@ export default function FriendsQuizPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => {
+                  onClick={async () => {
                     const funkyMessages = [
                       `☕ OH. MY. GOD! I just scored ${result.score.percentage}% on the F•R•I•E•N•D•S Quiz! 🛋️ Could I BE any more of a fan? Earned the "${result.badge?.name}" badge! 🦞\n\nPIVOT your way to the quiz 👉 https://www.knowhimanshu.in/games/friends-quiz\n\n#FriendsTrivia #CentralPerk #HowYouDoin`,
                       `🛋️ "How YOU doin'?" I'm doing GREAT because I scored ${result.score.percentage}% on the F•R•I•E•N•D•S Quiz! ☕ Got the "${result.badge?.name}" badge!\n\nI'll be there for you... at the quiz 👉 https://www.knowhimanshu.in/games/friends-quiz\n\n#FriendsTrivia #Lobster`,
@@ -1326,62 +1290,27 @@ export default function FriendsQuizPage() {
                     ];
                     const text = funkyMessages[Math.floor(Math.random() * funkyMessages.length)];
                     
-                    // Async function to handle image sharing
-                    const shareWithImage = async () => {
-                      if (!certificateRef.current) return false;
-                      
-                      try {
-                        const html2canvas = (await import('html2canvas')).default;
-                        const canvas = await html2canvas(certificateRef.current, {
-                          backgroundColor: '#5B21B6',
-                          scale: 2,
-                          useCORS: true,
-                          allowTaint: true,
-                          logging: false,
+                    try {
+                      // Try native share API first
+                      if (typeof navigator.share === 'function') {
+                        await navigator.share({ 
+                          text,
+                          url: 'https://www.knowhimanshu.in/games/friends-quiz'
                         });
-                        
-                        const blob = await new Promise<Blob>((resolve) => 
-                          canvas.toBlob((b) => resolve(b!), 'image/png')
-                        );
-                        const file = new File([blob], 'friends-quiz-certificate.png', { type: 'image/png' });
-                        
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                          await navigator.share({
-                            text,
-                            files: [file],
-                          });
-                          return true;
-                        }
-                      } catch (err) {
-                        console.log('Image share failed:', err);
+                        return;
                       }
-                      return false;
-                    };
+                    } catch (err) {
+                      // User cancelled or share failed
+                      console.log('Share failed or cancelled:', err);
+                    }
                     
-                    // Check if we're on a real mobile device (not emulator)
-                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                    const hasShareApi = typeof navigator.share === 'function';
-                    const hasCanShareApi = typeof navigator.canShare === 'function';
-                    
-                    if (isMobile && hasShareApi && hasCanShareApi) {
-                      // On real mobile, try image sharing
-                      shareWithImage().then((success) => {
-                        if (!success) {
-                          // Fallback: just copy to clipboard
-                          navigator.clipboard.writeText(text);
-                          alert('📋 Copied to clipboard! Share it with your friends!');
-                        }
-                      });
-                    } else if (hasShareApi) {
-                      // Desktop or emulator: text-only share (synchronous)
-                      navigator.share({ text }).catch(() => {
-                        navigator.clipboard.writeText(text);
-                        alert('📋 Copied to clipboard! Share it with your friends!');
-                      });
-                    } else {
-                      // No share API: clipboard only
-                      navigator.clipboard.writeText(text);
+                    // Fallback: copy to clipboard
+                    try {
+                      await navigator.clipboard.writeText(text);
                       alert('📋 Copied to clipboard! Share it with your friends!');
+                    } catch (clipErr) {
+                      // Clipboard failed, show text in prompt
+                      prompt('Copy this text to share:', text);
                     }
                   }}
                   className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl hover:shadow-lg transition-all shadow-lg"
