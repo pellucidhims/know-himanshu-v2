@@ -30,6 +30,10 @@ export const metadata: Metadata = {
     'tic tac toe online',
     'memory match game',
     'find pairs game',
+    'friends quiz',
+    'friends trivia',
+    'friends tv show quiz',
+    'ross rachel monica chandler joey phoebe quiz',
     
     // Use case keywords
     'timepass games',
@@ -187,6 +191,32 @@ const jsonLd = {
           'position': 2,
           'item': {
             '@type': 'VideoGame',
+            'name': 'Friends TV Show Quiz',
+            'description': 'Test your Friends knowledge! Free trivia quiz about Ross, Rachel, Monica, Chandler, Joey & Phoebe. Earn badges and prove you\'re a true fan!',
+            'url': 'https://knowhimanshu.in/games/friends-quiz',
+            'genre': ['Quiz', 'Trivia', 'TV Show Quiz', 'Entertainment'],
+            'gamePlatform': ['Web Browser', 'Mobile Browser'],
+            'applicationCategory': 'Game',
+            'offers': {
+              '@type': 'Offer',
+              'price': '0',
+              'priceCurrency': 'USD',
+              'availability': 'https://schema.org/InStock'
+            },
+            'aggregateRating': {
+              '@type': 'AggregateRating',
+              'ratingValue': '4.7',
+              'ratingCount': '89',
+              'bestRating': '5',
+              'worstRating': '1'
+            }
+          }
+        },
+        {
+          '@type': 'ListItem',
+          'position': 3,
+          'item': {
+            '@type': 'VideoGame',
             'name': 'Tic Tac Toe',
             'description': 'Classic strategy game with AI opponent. Can you outsmart the computer?',
             'url': 'https://knowhimanshu.in/games/tic-tac-toe',
@@ -202,7 +232,7 @@ const jsonLd = {
         },
         {
           '@type': 'ListItem',
-          'position': 3,
+          'position': 4,
           'item': {
             '@type': 'VideoGame',
             'name': 'Find Pairs',
@@ -220,7 +250,7 @@ const jsonLd = {
         },
         {
           '@type': 'ListItem',
-          'position': 4,
+          'position': 5,
           'item': {
             '@type': 'VideoGame',
             'name': 'Puller',

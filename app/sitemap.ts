@@ -32,6 +32,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/games/crossword/how-to-play`,
       lastModified: today,
     },
+    
+    // Friends Quiz - TV Show Trivia Game
+    {
+      url: `${baseUrl}/games/friends-quiz`,
+      lastModified: today,
+    },
+    
     {
       url: `${baseUrl}/games/tic-tac-toe`,
       lastModified: today,
