@@ -3,7 +3,7 @@
 // import { useState } from 'react' // Unused after commenting JoinRoomSection
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Gamepad2, Dices, Zap, Brain, Grid3X3 } from 'lucide-react'
+import { Gamepad2, Dices, Zap, Brain, Grid3X3, Smartphone, Coffee } from 'lucide-react'
 import { fadeIn, staggerContainer, zoomIn } from '../lib/utils'
 import GamesNavbar from '../components/navigation/games-navbar'
 
@@ -68,7 +68,20 @@ const games = [
     bgColor: 'bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-emerald-900/20 dark:to-teal-800/20',
     iconColor: 'text-emerald-500',
     difficulty: 'Medium',
-    players: '1 Player'
+    players: '1 Player',
+    isPWA: true, // Installable as mobile app
+  },
+  {
+    id: 'friends-quiz',
+    title: 'Friends Trivia',
+    description: 'Test your knowledge of the iconic American sitcom! Earn badges and fan certificates.',
+    icon: Coffee,
+    color: 'from-violet-500 to-purple-700',
+    bgColor: 'bg-gradient-to-br from-violet-50 to-purple-100 dark:from-violet-900/20 dark:to-purple-800/20',
+    iconColor: 'text-violet-500',
+    difficulty: 'Varies',
+    players: '1 Player',
+    isNew: true,
   },
   {
     id: 'tic-tac-toe',
@@ -177,6 +190,25 @@ export default function GamesPage() {
                     transformStyle: 'preserve-3d',
                   }}
                 >
+                  {/* PWA Ribbon Badge */}
+                  {'isPWA' in game && game.isPWA && (
+                    <div className="absolute -right-12 top-6 z-20 rotate-45">
+                      <div className="bg-gradient-to-r from-violet-600 to-purple-600 text-white text-[10px] font-bold py-1 px-12 shadow-lg flex items-center justify-center gap-1">
+                        <Smartphone className="w-3 h-3" />
+                        <span>INSTALL APP</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* NEW Badge */}
+                  {'isNew' in game && game.isNew && (
+                    <div className="absolute top-4 right-4 z-20">
+                      <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold py-1 px-3 rounded-full shadow-lg animate-pulse">
+                        NEW
+                      </div>
+                    </div>
+                  )}
+
                   {/* Animated Background Gradient */}
                   <div className={`
                     absolute inset-0 bg-gradient-to-br ${game.color} opacity-0 
