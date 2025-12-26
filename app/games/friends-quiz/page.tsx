@@ -527,6 +527,7 @@ export default function FriendsQuizPage() {
   // State for showing image preview modal on mobile
   const [showImagePreview, setShowImagePreview] = useState<string | null>(null)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [showScreenshotGuide, setShowScreenshotGuide] = useState(false)
 
   // Download certificate as PNG
   const downloadCertificate = async () => {
@@ -536,30 +537,56 @@ export default function FriendsQuizPage() {
     }
 
     setIsGeneratingImage(true)
+    let timeoutTriggered = false
+
+    // Set a timeout to prevent infinite spinner
+    const timeoutId = setTimeout(() => {
+      timeoutTriggered = true
+      setIsGeneratingImage(false)
+      setShowScreenshotGuide(true)
+    }, 10000) // 10 second timeout
 
     try {
       // Dynamically import html2canvas
-      const html2canvas = (await import('html2canvas')).default
+      const html2canvasModule = await import('html2canvas')
+      const html2canvas = html2canvasModule.default
+      
+      if (!html2canvas || timeoutTriggered) {
+        throw new Error('Failed to load image library')
+      }
       
       const canvas = await html2canvas(certificateRef.current, {
         backgroundColor: '#5B21B6',
-        scale: 2,
+        scale: 1, // Use scale 1 for better mobile compatibility
         useCORS: true,
         allowTaint: true,
         logging: false,
+        imageTimeout: 5000,
+        width: certificateRef.current.offsetWidth,
+        height: certificateRef.current.offsetHeight,
       })
 
-      const dataUrl = canvas.toDataURL('image/png')
+      if (timeoutTriggered) return
+
+      clearTimeout(timeoutId)
+
+      const dataUrl = canvas.toDataURL('image/png', 0.9)
       
-      // Always show the image preview on mobile - most reliable method
-      // User can long-press to save
+      if (!dataUrl || dataUrl === 'data:,' || dataUrl.length < 1000) {
+        throw new Error('Failed to generate image')
+      }
+      
+      // Show the image preview - user can long-press to save
       setShowImagePreview(dataUrl)
+      setIsGeneratingImage(false)
       
     } catch (err) {
-      console.error('Failed to generate certificate:', err)
-      alert('Failed to create certificate. Please try taking a screenshot instead.')
-    } finally {
-      setIsGeneratingImage(false)
+      if (!timeoutTriggered) {
+        clearTimeout(timeoutId)
+        console.error('Failed to generate certificate:', err)
+        setIsGeneratingImage(false)
+        setShowScreenshotGuide(true)
+      }
     }
   }
 
@@ -1451,6 +1478,47 @@ export default function FriendsQuizPage() {
                 className="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition-colors"
               >
                 Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Screenshot Guide Modal */}
+      <AnimatePresence>
+        {showScreenshotGuide && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowScreenshotGuide(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-purple-900 border border-purple-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center"
+            >
+              <div className="text-5xl mb-4">📸</div>
+              <h3 className="text-xl font-bold text-white mb-3">Take a Screenshot!</h3>
+              <p className="text-purple-200 mb-4 text-sm">
+                Close this popup and take a screenshot of your certificate:
+              </p>
+              <div className="bg-purple-800/50 rounded-lg p-4 mb-4 text-left">
+                <p className="text-purple-100 text-sm mb-2">
+                  <strong>iPhone:</strong> Power + Volume Up
+                </p>
+                <p className="text-purple-100 text-sm">
+                  <strong>Android:</strong> Power + Volume Down
+                </p>
+              </div>
+              <button
+                onClick={() => setShowScreenshotGuide(false)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                Got it! 👍
               </button>
             </motion.div>
           </motion.div>
