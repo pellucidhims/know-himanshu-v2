@@ -1555,17 +1555,6 @@ export default function CrosswordPage() {
                       <Flame className="w-3 h-3 flex-shrink-0" />
                       <span>{user?.stats?.currentStreak ?? 0} day streak</span>
                     </div>
-                    {/* Badges indicator */}
-                    {userBadges.length > 0 && (
-                      <button
-                        onClick={() => setShowBadgeShowcase(true)}
-                        className="flex items-center gap-1 text-purple-600 dark:text-purple-400 text-xs hover:text-purple-500 transition-colors"
-                        title="View Badges"
-                      >
-                        <Trophy className="w-3 h-3 flex-shrink-0" />
-                        <span>{userBadges.length} badges</span>
-                      </button>
-                    )}
                   </div>
                 </div>
                 
@@ -1590,27 +1579,24 @@ export default function CrosswordPage() {
                     <span className="hidden sm:inline">Games</span>
                   </Link>
                   
-                  {/* Badges Button - Show if user has any badges */}
+                  {/* Badges Button */}
                   {userBadges.length > 0 && (
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       onClick={() => setShowBadgeShowcase(true)}
-                      className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-lg hover:shadow-lg transition-all"
+                      className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg hover:from-yellow-500 hover:to-amber-600 transition-all shadow-sm"
                       title={`View your ${userBadges.length} badges`}
                     >
-                      <Trophy className="w-5 h-5" />
-                      {/* Badge count indicator */}
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      <Trophy className="w-5 h-5 text-white" />
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
                         {userBadges.length}
                       </span>
-                    </motion.button>
+                    </button>
                   )}
                   
-                  {/* Help Button */}
+                  {/* Help Button - Hidden on mobile */}
                   <Link
                     href="/games/crossword/how-to-play"
-                    className="flex items-center justify-center w-10 h-10 text-amber-500 hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors rounded-lg"
+                    className="hidden sm:flex items-center justify-center w-10 h-10 text-amber-500 hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors rounded-lg"
                     title="How to Play"
                   >
                     <Lightbulb className="w-5 h-5" />
