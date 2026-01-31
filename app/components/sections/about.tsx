@@ -85,7 +85,7 @@ export default function About() {
                 className="grid grid-cols-2 gap-4 mt-8"
               >
                 <div className="bg-gradient-primary p-4 rounded-lg text-white text-center">
-                  <div className="text-2xl font-bold">7+</div>
+                  <div className="text-2xl font-bold">9+</div>
                   <div className="text-sm">Years Experience</div>
                 </div>
                 <div className="bg-gradient-secondary p-4 rounded-lg text-white text-center">
