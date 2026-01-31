@@ -127,6 +127,50 @@ export const COLOR_ARRAY = [
   '#ffb300',
 ]
 
+/**
+ * Detects user's country code from their IP address
+ * Returns 'TH' for Thailand, or null if detection fails (defaults to IND)
+ */
+export async function detectUserCountry(): Promise<string | null> {
+  try {
+    // Using ipapi.co free service (supports CORS for client-side requests)
+    const response = await fetch('https://ipapi.co/json/', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch location')
+    }
+    
+    const data = await response.json()
+    // ipapi.co returns 'country_code' field (e.g., 'TH', 'IN')
+    return data.country_code || null
+  } catch (error) {
+    console.error('Error detecting user country:', error)
+    // Fallback: try alternative service
+    try {
+      const fallbackResponse = await fetch('https://ipinfo.io/json', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+      
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json()
+        return fallbackData.country || null
+      }
+    } catch (fallbackError) {
+      console.error('Fallback location detection also failed:', fallbackError)
+    }
+    
+    return null
+  }
+}
+
 export const EXPERIENCES = [
   {
     id: '2026',

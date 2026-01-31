@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Download, ArrowDown } from 'lucide-react'
 import Image from 'next/image'
-import { INTRO_TEXTS, COLOR_ARRAY, fadeIn, textVariant } from '../../lib/utils'
+import { INTRO_TEXTS, COLOR_ARRAY, fadeIn, textVariant, detectUserCountry } from '../../lib/utils'
 
 export default function Hero() {
   const [currentText, setCurrentText] = useState('')
@@ -12,6 +12,7 @@ export default function Hero() {
   const [colorIndex, setColorIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showCursor, setShowCursor] = useState(true)
+  const [userCountry, setUserCountry] = useState<string | null>(null)
   
   const timeoutRef = useRef<NodeJS.Timeout>()
 
@@ -61,9 +62,22 @@ export default function Hero() {
     return () => clearInterval(cursorInterval)
   }, [])
 
+  // Detect user's country on component mount
+  useEffect(() => {
+    detectUserCountry().then((countryCode) => {
+      setUserCountry(countryCode)
+    })
+  }, [])
+
   const downloadCV = () => {
+    // Determine which resume to download based on user's country
+    // If user is from Thailand (TH), download BKK version, otherwise IND version
+    const resumeFile = userCountry === 'TH' 
+      ? '/HimanshuResume_BKK.pdf' 
+      : '/HimanshuResume_IND.pdf'
+    
     const link = document.createElement('a')
-    link.href = '/HimanshuResume.pdf'
+    link.href = resumeFile
     link.download = `Himanshu (9+ Years, Agoda) - ${new Date().toLocaleDateString()}.pdf`
     link.click()
   }
