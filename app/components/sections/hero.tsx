@@ -64,7 +64,7 @@ export default function Hero() {
   const downloadCV = () => {
     const link = document.createElement('a')
     link.href = '/HimanshuResume.pdf'
-    link.download = `Himanshu (7 Years, Walmart) - ${new Date().toLocaleDateString()}.pdf`
+    link.download = `Himanshu (9+ Years, Agoda) - ${new Date().toLocaleDateString()}.pdf`
     link.click()
   }
 
@@ -126,7 +126,7 @@ export default function Hero() {
               variants={textVariant(0.8)}
               className="text-xl md:text-2xl text-gray-600 dark:text-dark-text-secondary mb-8 leading-relaxed"
             >
-              Senior Software Engineer at Walmart Global Tech
+              Staff Software Engineer at Agoda
             </motion.p>
 
             <motion.div

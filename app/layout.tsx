@@ -18,9 +18,9 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Himanshu - Senior Software Engineer',
-  description: 'Senior Software Engineer at Walmart Global Tech. Driving product discussions and solution design to develop and scale Subscription and Membership for Walmart Mexico and Canada users.',
-  keywords: ['Himanshu', 'Software Engineer', 'Full Stack Developer', 'React', 'Node.js', 'Portfolio'],
+  title: 'Himanshu - Staff Software Engineer',
+  description: 'Staff Software Engineer at Agoda. As part of accommodation price display team, drive initiative to maintain consistency of pricing for users and improving the user experience to drive booking.',
+  keywords: ['Himanshu', 'Software Engineer', 'Full Stack Developer', 'React', 'Node.js', 'Portfolio', 'NextJs', 'GraphQL'],
   authors: [{ name: 'Himanshu' }],
   creator: 'Himanshu',
   viewport: {
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://knowhimanshu.in',
     siteName: 'Himanshu Portfolio',
-    title: 'Himanshu - Senior Software Engineer',
-    description: 'Senior Software Engineer at Walmart Global Tech. Driving product discussions and solution design to develop and scale Subscription and Membership for Walmart Mexico and Canada users.',
+    title: 'Himanshu - Staff Software Engineer',
+    description: 'Staff Software Engineer at Agoda. As part of accommodation price display team, drive initiative to maintain consistency of pricing for users and improving the user experience to drive booking.',
     images: [
       {
         url: '/displayProfilePicture.jpg',
@@ -47,8 +47,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Himanshu - Senior Software Engineer',
-    description: 'Senior Software Engineer at Walmart Global Tech. Driving product discussions and solution design to develop and scale Subscription and Membership for Walmart Mexico and Canada users.',
+    title: 'Himanshu - Staff Software Engineer',
+    description: 'Staff Software Engineer at Agoda. As part of accommodation price display team, drive initiative to maintain consistency of pricing for users and improving the user experience to drive booking.',
     creator: '@pelucidhimanshu',
     images: ['/displayProfilePicture.jpg'],
   },

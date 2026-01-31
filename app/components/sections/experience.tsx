@@ -143,13 +143,23 @@ export default function Experience() {
 
                       {/* Tags */}
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {experience.institute === 'Walmart Global Tech' && (
+                      {experience.institute === 'Agoda' && (
                           <>
                             <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-xs font-medium">
                               Current Role
                             </span>
                             <span className="px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-700 dark:text-secondary-300 rounded-full text-xs font-medium">
                               Full Stack
+                            </span>
+                          </>
+                        )}
+                        {experience.institute === 'Walmart Global Tech' && (
+                          <>
+                            <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-xs font-medium">
+                              NextJs
+                            </span>
+                            <span className="px-3 py-1 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-700 dark:text-secondary-300 rounded-full text-xs font-medium">
+                              GraphQL
                             </span>
                           </>
                         )}
@@ -201,7 +211,7 @@ export default function Experience() {
             className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16"
           >
             {[
-              { label: 'Years of Experience', value: '7+' },
+              { label: 'Years of Experience', value: '9+' },
               { label: 'Companies Worked', value: '4' },
               { label: 'Projects Delivered', value: '50+' },
               { label: 'Technologies Mastered', value: '20+' },

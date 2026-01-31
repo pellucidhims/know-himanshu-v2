@@ -327,7 +327,7 @@ export default function Games() {
                   transition={{ duration: 2, repeat: Infinity, delay: 0 }}
                   className="text-2xl font-bold text-purple-600 dark:text-purple-400"
                 >
-                  3
+                  5
                 </motion.div>
                 <div className="text-sm text-gray-600 dark:text-dark-text-secondary">Epic Games</div>
               </div>
